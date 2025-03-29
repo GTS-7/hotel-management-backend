@@ -22,7 +22,6 @@
     },
     "devDependencies": {
         "@types/express": "^5.0.0",
-        "@types/mongoose": "^5.11.96",
         "@types/node": "^22.13.10",
         "nodemon": "^3.1.9",
         "prettier": "^3.5.3",
@@ -32,6 +31,7 @@
     "dependencies": {
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
-        "mongoose": "^8.12.1"
+        "firebase": "^11.5.0",
+        "firebase-admin": "^13.2.0"
     }
 }
