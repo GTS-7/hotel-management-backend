@@ -1,11 +1,22 @@
-import mongoose from 'mongoose';
+import admin from "firebase-admin";
+import dotenv from "dotenv";
 
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI as string);
-    } catch (err: any) {
-        console.error(`Error: ${err.message}`);
-    }
-};
+dotenv.config();
 
-export default connectDB;
+if (!admin.apps.length) {
+  const firebaseConfig = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  };
+
+  admin.initializeApp({
+    credential: admin.credential.cert(firebaseConfig),
+  });
+
+  console.log("✅ Firebase initialized");
+} else {
+  console.log("⚠️ Firebase already initialized");
+}
+
+export default admin;
