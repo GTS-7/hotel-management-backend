@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 
 // Importing the database connection
-import firebaseAdmin from './config/db.js';
+import db from './config/db.js';
 
 import v1Router from './routes/v1/index.js';
 
@@ -16,7 +16,6 @@ const app = express();
 // Check Firebase connection on first run
 const checkFirebase = async () => {
     try {
-        const db = firebaseAdmin.firestore();
         const testDoc = await db.collection("test").doc("initCheck").get();
         console.log("✅ Firebase is connected:", testDoc.exists ? "Connected" : "No test document found");
     } catch (error) {

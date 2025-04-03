@@ -19,4 +19,6 @@ if (!admin.apps.length) {
   console.log("⚠️ Firebase already initialized");
 }
 
-export default admin;
+const db = admin.firestore();
+
+export default db;
