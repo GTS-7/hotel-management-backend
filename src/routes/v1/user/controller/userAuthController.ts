@@ -15,7 +15,7 @@ const handleRegistration = async (req: any, res: any) => {
         if(!userSnapShot.empty) return res.status(400).json({ message: "Email already registered" });
 
         // Create user
-        const newUserRef = db.collection("users").doc();
+        const newUserRef = db.collection("users").doc(email);
         await newUserRef.set({
             fullName,
             email,
