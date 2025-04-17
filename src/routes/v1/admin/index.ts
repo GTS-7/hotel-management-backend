@@ -15,3 +15,5 @@ router.use(verifyAdmin);
 
 // Other routes that require authentication
 
+
+export default router;
