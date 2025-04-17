@@ -1,6 +1,5 @@
 import db from "../../../../config/db.js";
 
-
 const getUserDetails = async (req: any, res: any) => {
     try {
         const email = req.email; // Assuming email is set in the request by the verifyUser middleware

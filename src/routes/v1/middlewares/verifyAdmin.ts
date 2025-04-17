@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import db from "../../../config/db.js";
 
-const verifyUser = (req: any, res: any, next: any) => {
+const verifyAdmin = (req: any, res: any, next: any) => {
     try {
         // Check if the request has an authorization header
         const token = req.headers["authorization"]?.split(" ")[1];
@@ -10,18 +10,17 @@ const verifyUser = (req: any, res: any, next: any) => {
         const secretKey = process.env.TOKEN_SECRET || "default";
 
         // Decode the token
-        const decodedToken = jwt.verify(token, secretKey) as { email: string, clientDeviceId: string };
+        const decodedToken = jwt.verify(token, secretKey) as { email: string };
         if (!decodedToken) return res.status(401).json({ message: "Unauthorized" });
         
         // Check if the user exists in the database
-        const userRef = db.collection("users").doc(decodedToken.email);
-        userRef.get().then((userSnapShot) => {
-            if (!userSnapShot.exists) return res.status(401).json({ message: "Unauthorized" });
+        const adminRef = db.collection("admin").doc(decodedToken.email);
+        adminRef.get().then((adminSnapShot) => {
+            if (!adminSnapShot.exists) return res.status(401).json({ message: "Unauthorized" });
         });
 
         // Attach userId and clientDeviceId to the request object
         req.email = decodedToken.email;
-        req.clientDeviceId = decodedToken.clientDeviceId;
 
         // Proceed to the next middleware or route handler
         next();
@@ -31,4 +30,4 @@ const verifyUser = (req: any, res: any, next: any) => {
     }
 }
 
-export default verifyUser
+export default verifyAdmin;
