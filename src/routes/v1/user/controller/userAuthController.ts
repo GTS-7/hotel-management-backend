@@ -69,7 +69,7 @@ const handleLogin = async (req: any, res: any) => {
         });
 
         // Generate JWT token
-        const jwtToken = jwt.sign({  userId, clientDeviceId }, tokenSecret, {
+        const jwtToken = jwt.sign({  email, clientDeviceId }, tokenSecret, {
             expiresIn: "7d"
         })
 
