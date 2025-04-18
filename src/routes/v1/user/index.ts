@@ -17,5 +17,8 @@ router.use(verifyUser)
 // Other routes that require authentication
 router
     .get("/user", userController.getUserDetails)
+    .post("/cart", userController.handleCart)
+    .get("/cart", userController.getCartItems)
+    .delete("/cart", userController.deleteCartItem);
 
 export default router;
