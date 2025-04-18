@@ -16,7 +16,7 @@ const verifyAdmin = (req: any, res: any, next: any) => {
         // Check if the user exists in the database
         const adminRef = db.collection("admin").doc(decodedToken.email);
         adminRef.get().then((adminSnapShot) => {
-            if (!adminSnapShot.exists) return res.status(401).json({ message: "Unauthorized" });
+            if (!adminSnapShot.exists) return res.status(401).json({ message: "Unauthorized! user not found" });
         });
 
         // Attach userId and clientDeviceId to the request object
