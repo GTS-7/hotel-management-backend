@@ -18,5 +18,7 @@ router.use(verifyAdmin);
 router
     .post('/create-room', adminController.handleCreateRoom)
     .get('/rooms', adminController.getRooms)
+    .put('/update-room', adminController.handleUpdateRoom)
+    .delete('/delete-room', adminController.handleDeleteRoom)
 
 export default router;

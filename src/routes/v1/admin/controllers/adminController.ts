@@ -51,7 +51,65 @@ const getRooms = async (req: any, res: any) => {
     }
 }
 
+const handleUpdateRoom = async (req: any, res: any) => {
+    try {
+        const { 
+            roomId,
+            roomName, 
+            roomType, 
+            beds, 
+            price, 
+            photos, 
+            highlights 
+        } = req.body;
+        if(!roomId) {
+            return res.status(400).json({ message: 'Room ID is required' });
+        }
+
+        let updatedRoomData: any;
+        if(roomName) updatedRoomData.roomName = roomName;
+        if(roomType) updatedRoomData.roomType = roomType;
+        if(beds) updatedRoomData.beds = beds;
+        if(price) updatedRoomData.price = price;
+        if(photos) updatedRoomData.photos = photos;
+        if(highlights) updatedRoomData.highlights = highlights;
+
+        const roomRef = db.collection('rooms').doc(roomId);
+        const roomDoc = await roomRef.get();
+        if (!roomDoc.exists) {
+            return res.status(404).json({ message: 'Room not found' });
+        }
+        await roomRef.update(updatedRoomData);
+
+        res.status(200).json({ message: 'Room updated successfully' });
+    } catch (error) {
+        console.error('Error updating room:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+const handleDeleteRoom = async (req: any, res: any) => {
+    try {
+        const { roomId } = req.body;
+        if (!roomId) {
+            return res.status(400).json({ message: 'Room ID is required' });
+        }
+        const roomRef = db.collection('rooms').doc(roomId);
+        const roomDoc = await roomRef.get();
+        if (!roomDoc.exists) {
+            return res.status(404).json({ message: 'Room not found' });
+        }
+        await roomRef.delete();
+        res.status(200).json({ message: 'Room deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting room:', error);
+        res.status(500).json({ message: 'Internal server error' });       
+    }
+;}
+
 export default {
     handleCreateRoom,
     getRooms,
+    handleUpdateRoom,
+    handleDeleteRoom
 }
