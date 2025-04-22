@@ -1,44 +1,44 @@
 {
-    "name": "hotel-management-backend",
-    "version": "1.0.0",
-    "description": "Hotel management backend",
-    "homepage": "https://github.com/Beast227/hotel-management-backend#readme",
-    "bugs": {
-        "url": "https://github.com/Beast227/hotel-management-backend/issues"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Beast227/hotel-management-backend.git"
-    },
-    "license": "ISC",
-    "author": "Paveen, Krishna, etc..",
-    "type": "module",
-    "main": "index.ts",
-    "scripts": {
-        "dev": "nodemon --exec tsx src/index.ts",
-        "build": "tsc",
-        "start": "node dist/index.js",
-        "format": "prettier --write ."
-    },
-    "devDependencies": {
-        "@types/bcrypt": "^5.0.2",
-        "@types/cors": "^2.8.17",
-        "@types/express": "^5.0.0",
-        "@types/node": "^22.13.10",
-        "@types/uuid": "^10.0.0",
-        "nodemon": "^3.1.9",
-        "prettier": "^3.5.3",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.8.2"
-    },
-    "dependencies": {
-        "bcrypt": "^5.1.1",
-        "cors": "^2.8.5",
-        "dotenv": "^16.4.7",
-        "express": "^4.21.2",
-        "firebase": "^11.5.0",
-        "firebase-admin": "^13.2.0",
-        "jsonwebtoken": "^9.0.2",
-        "uuid": "^11.1.0"
-    }
+  "name": "hotel-management-backend",
+  "version": "1.0.0",
+  "description": "Hotel management backend",
+  "homepage": "https://github.com/Beast227/hotel-management-backend#readme",
+  "bugs": {
+    "url": "https://github.com/Beast227/hotel-management-backend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Beast227/hotel-management-backend.git"
+  },
+  "license": "ISC",
+  "author": "Paveen, Krishna, etc..",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "nodemon --exec tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.10",
+    "@types/uuid": "^10.0.0",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "firebase": "^11.5.0",
+    "firebase-admin": "^13.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^11.1.0"
+  }
 }

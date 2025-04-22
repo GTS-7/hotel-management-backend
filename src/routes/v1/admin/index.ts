@@ -8,17 +8,17 @@ import adminController from "./controllers/adminController.js";
 
 // Routes for admin registration and login
 router
-    .post("/register", adminAuthController.handleRegistration)
-    .post("/login", adminAuthController.handleLogin);
+  .post("/register", adminAuthController.handleRegistration)
+  .post("/login", adminAuthController.handleLogin);
 
 // Authenticated routes for admin
 router.use(verifyAdmin);
 
 // Other routes that require authentication
 router
-    .post('/create-room', adminController.handleCreateRoom)
-    .get('/rooms', adminController.getRooms)
-    .put('/update-room', adminController.handleUpdateRoom)
-    .delete('/delete-room', adminController.handleDeleteRoom)
+  .post("/create-room", adminController.handleCreateRoom)
+  .get("/rooms", adminController.getRooms)
+  .put("/update-room", adminController.handleUpdateRoom)
+  .delete("/delete-room", adminController.handleDeleteRoom);
 
 export default router;

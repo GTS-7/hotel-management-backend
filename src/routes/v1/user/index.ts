@@ -8,17 +8,19 @@ import userController from "./controller/userController.js";
 
 // Routes without middleware checks
 router
-    .post("/register", userAuthController.handleRegistration)
-    .post("/login", userAuthController.handleLogin);
+  .post("/register", userAuthController.handleRegistration)
+  .post("/login", userAuthController.handleLogin);
 
 // Authenticated routes for user
-router.use(verifyUser)
+router.use(verifyUser);
 
 // Other routes that require authentication
+router.get("/user", userController.getUserDetails).put("/user", userController.updateUserDetails);
+
+// Cart routes
 router
-    .get("/user", userController.getUserDetails)
-    .post("/cart", userController.handleCart)
-    .get("/cart", userController.getCartItems)
-    .delete("/cart", userController.deleteCartItem);
+  .post("/cart", userController.handleCart)
+  .get("/cart", userController.getCartItems)
+  .delete("/cart", userController.deleteCartItem);
 
 export default router;

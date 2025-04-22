@@ -1,11 +1,11 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
 
 // Importing the database connection
-import db from './config/db.js';
+import db from "./config/db.js";
 
-import v1Router from './routes/v1/index.js';
+import v1Router from "./routes/v1/index.js";
 
 // Environment variables
 dotenv.config();
@@ -15,12 +15,15 @@ const app = express();
 
 // Check Firebase connection on first run
 const checkFirebase = async () => {
-    try {
-        const testDoc = await db.collection("test").doc("initCheck").get();
-        console.log("✅ Firebase is connected:", testDoc.exists ? "Connected" : "No test document found");
-    } catch (error) {
-        console.error("❌ Firebase connection error:", error);
-    }
+  try {
+    const testDoc = await db.collection("test").doc("initCheck").get();
+    console.log(
+      "✅ Firebase is connected:",
+      testDoc.exists ? "Connected" : "No test document found",
+    );
+  } catch (error) {
+    console.error("❌ Firebase connection error:", error);
+  }
 };
 checkFirebase(); // Run this check only once at startup
 
@@ -34,7 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 // routes for api calls
-app.use('/api/v1', v1Router);
+app.use("/api/v1", v1Router);
 
 // Server initialization completed successfully
 const PORT = process.env.PORT || 5000;
