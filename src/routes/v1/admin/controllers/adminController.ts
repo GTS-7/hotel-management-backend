@@ -57,13 +57,13 @@ const handleUpdateRoom = async (req: any, res: any) => {
       return res.status(400).json({ message: "Room ID is required" });
     }
 
-    let updatedRoomData: any;
-    if (roomName) updatedRoomData.roomName = roomName;
-    if (roomType) updatedRoomData.roomType = roomType;
-    if (beds) updatedRoomData.beds = beds;
-    if (price) updatedRoomData.price = price;
-    if (photos) updatedRoomData.photos = photos;
-    if (highlights) updatedRoomData.highlights = highlights;
+    let updatedRoomData: any = {};
+    if (roomName !== undefined) updatedRoomData.roomName = roomName;
+    if (roomType !== undefined) updatedRoomData.roomType = roomType;
+    if (beds !== undefined) updatedRoomData.beds = beds;
+    if (price !== undefined) updatedRoomData.price = price;
+    if (photos !== undefined) updatedRoomData.photos = photos;
+    if (highlights !== undefined) updatedRoomData.highlights = highlights;
 
     const roomRef = db.collection("rooms").doc(roomId);
     const roomDoc = await roomRef.get();

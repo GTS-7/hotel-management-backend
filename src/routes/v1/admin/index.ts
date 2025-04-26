@@ -16,9 +16,9 @@ router.use(verifyAdmin);
 
 // Other routes that require authentication
 router
-  .post("/create-room", adminController.handleCreateRoom)
-  .get("/rooms", adminController.getRooms)
-  .put("/update-room", adminController.handleUpdateRoom)
-  .delete("/delete-room", adminController.handleDeleteRoom);
+  .post("/room", adminController.handleCreateRoom)
+  .get("/room", adminController.getRooms)
+  .put("/room", adminController.handleUpdateRoom)
+  .delete("/room", adminController.handleDeleteRoom);
 
 export default router;
