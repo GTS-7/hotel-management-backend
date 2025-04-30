@@ -12,6 +12,9 @@ router.use(verifyUser);
 
 router
     .post("/", bookingController.handleBooking)
-    .get("/availability", bookingController.checkAvailability);
+    .get("/availability", bookingController.checkAvailability)
+    .get("/user", bookingController.getUserBookings)
+    .put("/:bookingId", bookingController.updateBooking)
+    .delete("/:bookingId", bookingController.deleteBooking);
 
 export default router;

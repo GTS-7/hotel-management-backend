@@ -80,7 +80,94 @@ const checkAvailability = async (req: any, res: any) => {
     }
 }
 
+const updateBooking = async (req: any, res: any) => {
+    try {
+        const { bookingId, startDate, endDate } = req.body;
+        if (!bookingId || !startDate || !endDate) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if (new Date(startDate) >= new Date(endDate)) {
+            return res.status(400).json({ message: "Start date must be before end date" });
+        }
+
+        const bookingRef = db.collection("bookings").doc(bookingId);
+        const bookingSnapshot = await bookingRef.get();
+        if (!bookingSnapshot.exists) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+
+        const bookingData = bookingSnapshot.data();
+        if (bookingData?.startDate.getTime() === new Date(startDate).getTime() && bookingData.endDate.getTime() === new Date(endDate).getTime()) {
+            return res.status(400).json({ message: "No changes detected" });
+        }
+
+        // Check if the room is available for the new dates
+        const isRoomAvailable = await checkRoomAvailability(bookingData?.roomId, new Date(startDate), new Date(endDate));
+        if (!isRoomAvailable) {
+            return res.status(400).json({ message: "Room is not available for the selected dates" });
+        }
+
+        // Proceed to update the booking
+        await bookingSnapshot.ref.update({
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
+        });
+
+        return res.status(200).json({ message: "Booking updated successfully" });
+    } catch (error) {
+        console.error("Error updating booking:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+const getBooking = async (req: any, res: any) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required" });
+        }
+
+        const bookingRef = db.collection("bookings").where("userId", "==", userId);
+        const bookingSnapshot = await bookingRef.get();
+        if (bookingSnapshot.empty) {
+            return res.status(404).json({ message: "No bookings found for this user" });
+        }
+
+        const bookings = bookingSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return res.status(200).json({ bookings });
+    } catch (error) {
+        console.error("Error getting booking:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+const deleteBooking = async (req: any, res: any) => {
+    try {
+        const { bookingId } = req.params;
+        if (!bookingId) {
+            return res.status(400).json({ message: "Booking ID is required" });
+        }
+
+        const bookingRef = db.collection("bookings").doc(bookingId);
+        const bookingSnapshot = await bookingRef.get();
+        if (!bookingSnapshot.exists) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+
+        await bookingRef.delete();
+
+        return res.status(200).json({ message: "Booking deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting booking:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 export default {
     handleBooking,
     checkAvailability,
+    updateBooking,
+    getBooking,
+    deleteBooking
 }
