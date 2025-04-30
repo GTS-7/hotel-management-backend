@@ -1,5 +1,7 @@
 import db from "../../../../config/db.js";
 
+
+// Controllers for handling room management
 const handleCreateRoom = async (req: any, res: any) => {
   try {
     const { roomName, roomType, beds, price, photos, highlights } = req.body;
@@ -107,11 +109,11 @@ const handleDeleteRoom = async (req: any, res: any) => {
     console.error("Error deleting room:", error);
     res.status(500).json({ message: "Internal server error" });
   }
-};
+}; 
 
 export default {
   handleCreateRoom,
   getRooms,
   handleUpdateRoom,
-  handleDeleteRoom,
+  handleDeleteRoom
 };

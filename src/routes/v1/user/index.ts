@@ -5,6 +5,7 @@ const router = express.Router();
 import userAuthController from "./controller/userAuthController.js";
 import verifyUser from "../middlewares/verifyUser.js";
 import userController from "./controller/userController.js";
+import adminController from "../admin/controllers/adminController.js";
 
 // Routes without middleware checks
 router
@@ -15,7 +16,13 @@ router
 router.use(verifyUser);
 
 // Other routes that require authentication
-router.get("/user", userController.getUserDetails).put("/user", userController.updateUserDetails);
+router
+  .get("/user", userController.getUserDetails)
+  .put("/user", userController.updateUserDetails);
+
+// Room management routes
+router
+  .get("/room", adminController.getRooms)
 
 // Cart routes
 router

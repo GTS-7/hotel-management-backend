@@ -7,7 +7,7 @@ const checkRoomAvailability = async (roomId: string, startDate: Date, endDate: D
             .where("startDate", "<", endDate)
             .where("endDate", ">", startDate)
             .get();
-        
+
         if (snapshot.empty) {
             return true; // Room is available
         }
@@ -21,8 +21,9 @@ const checkRoomAvailability = async (roomId: string, startDate: Date, endDate: D
 
 const handleBooking = async (req: any, res: any) => {
     try {
-        const { userId, roomId, startDate, endDate } = req.body;
-        if (!userId || !roomId || !startDate || !endDate) {
+        const email = req.email;
+        const { roomId, startDate, endDate } = req.body;
+        if (!roomId || !startDate || !endDate) {
             return res.status(400).json({ message: "All fields are required" });
         }
         if (new Date(startDate) >= new Date(endDate)) {
@@ -31,7 +32,7 @@ const handleBooking = async (req: any, res: any) => {
 
         // Validate dates
         const bookingData = {
-            userId,
+            userId: email,
             roomId,
             startDate: new Date(startDate),
             endDate: new Date(endDate),
@@ -164,10 +165,31 @@ const deleteBooking = async (req: any, res: any) => {
     }
 }
 
+const getAllBookings = async (req: any, res: any) => {
+    try {
+        const bookingsSnapshot = await db.collection("bookings").get();
+        if (bookingsSnapshot.empty) {
+            return res.status(404).json({ message: "No bookings found" });
+        }
+
+        // Map through the documents and return an array of booking objects
+        const bookings = bookingsSnapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+
+        res.status(200).json(bookings);
+    } catch (error) {
+        console.error("Error fetching bookings:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 export default {
     handleBooking,
     checkAvailability,
     updateBooking,
     getBooking,
-    deleteBooking
+    deleteBooking,
+    getAllBookings,
 }
