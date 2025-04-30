@@ -19,6 +19,6 @@ router
   .post("/room", adminController.handleCreateRoom)
   .get("/room", adminController.getRooms)
   .put("/room", adminController.handleUpdateRoom)
-  .delete("/room", adminController.handleDeleteRoom);
+  .delete("/room/:roomId", adminController.handleDeleteRoom);
 
 export default router;

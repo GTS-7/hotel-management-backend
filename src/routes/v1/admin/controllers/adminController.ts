@@ -81,17 +81,28 @@ const handleUpdateRoom = async (req: any, res: any) => {
 
 const handleDeleteRoom = async (req: any, res: any) => {
   try {
-    const { roomId } = req.body;
+    // Get roomId from URL parameters (`req.params`)
+    const { roomId } = req.params;
+
+    // Check if roomId is provided from the URL parameter
     if (!roomId) {
-      return res.status(400).json({ message: "Room ID is required" });
+      // This check might be redundant if the route definition enforces the parameter,
+      // but it's good practice for safety. Update message for clarity.
+      return res.status(400).json({ message: "Room ID is required in URL path" });
     }
+
+    // Proceed with the rest of your logic using the roomId obtained from req.params
     const roomRef = db.collection("rooms").doc(roomId);
     const roomDoc = await roomRef.get();
+
     if (!roomDoc.exists) {
       return res.status(404).json({ message: "Room not found" });
     }
+
     await roomRef.delete();
+
     res.status(200).json({ message: "Room deleted successfully" });
+
   } catch (error) {
     console.error("Error deleting room:", error);
     res.status(500).json({ message: "Internal server error" });
