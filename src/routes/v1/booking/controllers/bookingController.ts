@@ -1,4 +1,5 @@
 import db from "../../../../config/db.js";
+import helperFunction from "../../../../config/helperFunctions.js";
 
 const checkRoomAvailability = async (roomId: string, startDate: Date, endDate: Date) => {
     try {
@@ -166,24 +167,43 @@ const deleteBooking = async (req: any, res: any) => {
 }
 
 const getAllBookings = async (req: any, res: any) => {
+    // This controller fetches all bookings and is likely the one used by your admin dashboard.
     try {
         const bookingsSnapshot = await db.collection("bookings").get();
+
+        // Return an empty array if no bookings found
         if (bookingsSnapshot.empty) {
-            return res.status(404).json({ message: "No bookings found" });
+            // Changed 404 to 200 and return an empty array
+            return res.status(200).json([]);
         }
 
-        // Map through the documents and return an array of booking objects
-        const bookings = bookingsSnapshot.docs.map((doc: any) => ({
-            id: doc.id,
-            ...doc.data(),
-        }));
+        // Map through the documents and format date fields to ISO strings
+        const bookings = bookingsSnapshot.docs.map((doc: any) => {
+             const data = doc.data();
 
+             // Use the safeToDate helper to convert Firebase Timestamp objects to Date objects
+             const startDate = helperFunction.safeToDate(data.startDate);
+             const endDate = helperFunction.safeToDate(data.endDate);
+             const createdAt = helperFunction.safeToDate(data.createdAt);
+
+             return {
+                 id: doc.id,
+                 userId: data.userId,
+                 roomId: data.roomId,
+                 // Format valid Date objects to ISO strings, otherwise return null
+                 startDate: startDate ? startDate.toISOString() : null,
+                 endDate: endDate ? endDate.toISOString() : null,
+                 createdAt: createdAt ? createdAt.toISOString() : null,
+             };
+        });
+
+        // Return the array of formatted bookings directly
         res.status(200).json(bookings);
     } catch (error) {
         console.error("Error fetching bookings:", error);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
 
 export default {
     handleBooking,
