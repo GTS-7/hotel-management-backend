@@ -1,26 +1,44 @@
 import db from "../../../../config/db.js";
+import cloudinary from "../../../../config/cloudinary.js";
 
 
 // Controllers for handling room management
 const handleCreateRoom = async (req: any, res: any) => {
   try {
-    const { roomName, roomType, beds, price, photos, highlights } = req.body;
-    if (!roomName || !roomType || !beds || !price || !photos || !highlights) {
+    let { roomName, roomType, beds, price, highlights } = req.body;
+    const files = req.files as Express.Multer.File[];
+
+    highlights = JSON.parse(highlights);
+
+    if (!roomName || !roomType || !beds || !price || !files || !highlights) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    // Upload images to Cloudinary
+    const uploadPromises = files.map(file =>
+      new Promise<string>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "hotel_rooms" },
+          (error, result) => {
+            if (error || !result) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        stream.end(file.buffer);
+      })
+    );
+
+    const photoUrls = await Promise.all(uploadPromises);
 
     const newRoomRecord = await db.collection("rooms").add({
       roomName,
       roomType,
       beds,
       price,
-      photos,
+      photos: photoUrls,
       highlights,
       createdAt: new Date(),
     });
-    if (!newRoomRecord) {
-      return res.status(500).json({ message: "Failed to create room" });
-    }
 
     return res.status(201).json({
       message: "Room created successfully",
@@ -109,7 +127,7 @@ const handleDeleteRoom = async (req: any, res: any) => {
     console.error("Error deleting room:", error);
     res.status(500).json({ message: "Internal server error" });
   }
-}; 
+};
 
 export default {
   handleCreateRoom,

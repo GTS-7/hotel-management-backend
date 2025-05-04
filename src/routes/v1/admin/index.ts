@@ -6,6 +6,7 @@ import adminAuthController from "./controllers/adminAuthController.js";
 import verifyAdmin from "../middlewares/verifyAdmin.js";
 import adminController from "./controllers/adminController.js";
 import bookingController from "../booking/controllers/bookingController.js";
+import upload from "../../../config/multer.js";
 
 // Routes for admin registration and login
 router
@@ -19,7 +20,7 @@ router.use(verifyAdmin);
 
 // Room management routes
 router
-  .post("/room", adminController.handleCreateRoom)
+  .post("/room", upload.array("photos", 10) , adminController.handleCreateRoom)
   .get("/room", adminController.getRooms)
   .put("/room", adminController.handleUpdateRoom)
   .delete("/room/:roomId", adminController.handleDeleteRoom);
