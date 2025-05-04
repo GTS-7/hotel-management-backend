@@ -31,6 +31,29 @@ const safeToDate = (data: any): Date | null => {
     return date;
 };
 
+
+function getCloudinaryPublicId(url: string): string | null {
+    try {
+        // Matches the path segments after /upload/v<version>/ up to the file extension
+        const regex = /\/upload\/v\d+\/(.+?)\.\w+$/;
+        const match = url.match(regex);
+        if (match && match[1]) {
+            // match[1] will be something like 'folder/subfolder/image_name'
+            return match[1];
+        }
+        // Handle cases where the URL format might be different, e.g., includes transformations
+        // A more robust method might be needed depending on your Cloudinary settings
+        // and how URLs are generated. For standard uploaded images, this often works.
+        console.warn(`Could not extract public ID from URL: ${url}`);
+        return null;
+
+    } catch (e) {
+        console.error("Error extracting public ID:", url, e);
+        return null;
+    }
+}
+
 export default {
     safeToDate,
+    getCloudinaryPublicId
 };

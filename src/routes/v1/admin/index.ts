@@ -22,7 +22,7 @@ router.use(verifyAdmin);
 router
   .post("/room", upload.array("photos", 10) , adminController.handleCreateRoom)
   .get("/room", adminController.getRooms)
-  .put("/room", adminController.handleUpdateRoom)
+  .put("/room", upload.array("photos", 10), adminController.handleUpdateRoom)
   .delete("/room/:roomId", adminController.handleDeleteRoom);
 
 // Booking management routes
