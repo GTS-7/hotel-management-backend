@@ -29,6 +29,6 @@ router
 router
   .get("/booking", bookingController.getAllBookings)
   .delete("/booking/:bookingId", bookingController.deleteBooking)
-  .put("/booking/:bookingId", bookingController.updateBooking);
+  .put("/booking", bookingController.updateBooking);
 
 export default router;
