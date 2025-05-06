@@ -1,16 +1,19 @@
 import db from "../../../../config/db.js";
 import helperFunction from "../../../../config/helperFunctions.js";
 
-const checkRoomAvailability = async (roomId: string, startDate: Date, endDate: Date) => {
+const checkRoomAvailability = async (roomId: [string], startDate: Date, endDate: Date) => {
     try {
         const bookingRef = db.collection("bookings");
-        const snapshot = await bookingRef.where("roomId", "==", roomId)
-            .where("startDate", "<", endDate)
-            .where("endDate", ">", startDate)
-            .get();
 
-        if (snapshot.empty) {
-            return true; // Room is available
+        for (const id of roomId) {
+            const snapshot = await bookingRef.where("roomId", "==", id)
+                .where("startDate", "<", endDate.getTime())
+                .where("endDate", ">", startDate.getTime())
+                .get();
+
+            if (!snapshot.empty) {
+                return false; // Room is not available
+            }
         }
 
         return false; // Room is not available
@@ -26,10 +29,10 @@ const handleBooking = async (req: any, res: any) => {
         const email = req.email;
 
         // req.body should contain these fields (likely sent as strings from frontend)
-        const { roomId, startDate, endDate } = req.body;
+        const { roomIds, startDate, endDate, children, adult, elder } = req.body;
 
         // Basic validation
-        if (!roomId || !startDate || !endDate) {
+        if (!roomIds || !startDate || !endDate) {
             return res.status(400).json({ message: "All fields are required (roomId, startDate, endDate)" });
         }
 
@@ -39,9 +42,9 @@ const handleBooking = async (req: any, res: any) => {
         const endDateTime = new Date(endDate);
 
         // Check if the strings were successfully parsed into valid dates
-         if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-              return res.status(400).json({ message: "Invalid date format provided." });
-         }
+        if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+            return res.status(400).json({ message: "Invalid date format provided." });
+        }
 
 
         if (startDateTime >= endDateTime) {
@@ -49,35 +52,30 @@ const handleBooking = async (req: any, res: any) => {
         }
 
         // Optional: Add a check to prevent booking a start date in the past
-         const today = new Date();
-         // To compare dates only, set hours/minutes/seconds to 0
-         today.setHours(0, 0, 0, 0);
-         const startDay = new Date(startDateTime);
-         startDay.setHours(0, 0, 0, 0);
-         if (startDay < today) {
-             return res.status(400).json({ message: "Start date cannot be in the past." });
-         }
+        const today = new Date();
+        // To compare dates only, set hours/minutes/seconds to 0
+        today.setHours(0, 0, 0, 0);
+        const startDay = new Date(startDateTime);
+        startDay.setHours(0, 0, 0, 0);
+        if (startDay < today) {
+            return res.status(400).json({ message: "Start date cannot be in the past." });
+        }
 
-        // --- End of Validation ---
-
-
-        // Check if the room is available for the given dates
-        // NOTE: Your checkRoomAvailability function needs to correctly compare
-        // the provided startDateTime and endDateTime (which are Date objects)
-        // against the dates stored in the database (which will now be numbers/milliseconds).
-        // You'll need to convert the stored milliseconds back to Date objects within checkRoomAvailability.
-        const isRoomAvailable = await checkRoomAvailability(roomId, startDateTime, endDateTime);
+        const isRoomAvailable = await checkRoomAvailability(roomIds, startDateTime, endDateTime);
         if (!isRoomAvailable) {
             return res.status(400).json({ message: "Room is not available for the selected dates" });
         }
 
-        // --- Prepare data for Firestore, storing dates as milliseconds since epoch ---
+
         const bookingData = {
             userId: email, // Assuming email is the user identifier
-            roomId,
+            roomIds,
             // Store dates as numbers (milliseconds since epoch)
             startDate: startDateTime.getTime(), // Get milliseconds from Date object
             endDate: endDateTime.getTime(),   // Get milliseconds from Date object
+            children: children || 0, // Default to 0 if not provided
+            adult: adult || 0, // Default to 0 if not provided
+            elder: elder || 0, // Default to 0 if not provided
             // NEW: Store createdAt as milliseconds since epoch as well
             createdAt: new Date().getTime(),
         };
@@ -121,36 +119,40 @@ const checkAvailability = async (req: any, res: any) => {
 
 const updateBooking = async (req: any, res: any) => {
     try {
-        const { bookingId, startDate, endDate } = req.body; // startDate and endDate are incoming strings
+        const { bookingId, startDate, endDate, children, adult, elder, roomId } = req.body; // startDate and endDate are incoming strings
 
         // Basic validation
-        if (!bookingId || !startDate || !endDate) {
+        if (!bookingId) {
             return res.status(400).json({ message: "All fields are required (bookingId, startDate, endDate)" });
         }
 
-        // --- Parse incoming dates and perform validation using Date objects ---
-        const newStartDateTime = new Date(startDate);
-        const newEndDateTime = new Date(endDate);
+        let newStartDateTime = undefined;
+        let newEndDateTime = undefined;
+        if (startDate && endDate) {
+            // --- Parse incoming dates and perform validation using Date objects ---
+            newStartDateTime = new Date(startDate);
+            newEndDateTime = new Date(endDate);
 
-        // Check if date parsing resulted in valid dates
-        if (isNaN(newStartDateTime.getTime()) || isNaN(newEndDateTime.getTime())) {
-             return res.status(400).json({ message: "Invalid date format provided." });
+            // Check if date parsing resulted in valid dates
+            if (isNaN(newStartDateTime.getTime()) || isNaN(newEndDateTime.getTime())) {
+                return res.status(400).json({ message: "Invalid date format provided." });
+            }
+
+            if (newStartDateTime >= newEndDateTime) {
+                return res.status(400).json({ message: "Start date must be before end date" });
+            }
+            // Add a check to prevent booking past the current date for start date (optional)
+            if (newStartDateTime < new Date()) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const newStartDay = new Date(newStartDateTime);
+                newStartDay.setHours(0, 0, 0, 0);
+
+                if (newStartDay < today) {
+                    return res.status(400).json({ message: "Start date cannot be in the past." });
+                }
+            }
         }
-
-        if (newStartDateTime >= newEndDateTime) {
-            return res.status(400).json({ message: "Start date must be before end date" });
-        }
-         // Add a check to prevent booking past the current date for start date (optional)
-         if (newStartDateTime < new Date()) {
-             const today = new Date();
-             today.setHours(0, 0, 0, 0);
-             const newStartDay = new Date(newStartDateTime);
-             newStartDay.setHours(0, 0, 0, 0);
-
-             if (newStartDay < today) {
-                return res.status(400).json({ message: "Start date cannot be in the past." });
-             }
-         }
 
         // --- Fetch the existing booking ---
         const bookingRef = db.collection("bookings").doc(bookingId);
@@ -163,36 +165,27 @@ const updateBooking = async (req: any, res: any) => {
 
         const bookingData = bookingSnapshot.data(); // Data fetched from Firestore
 
-        // --- Compare new dates with existing dates (which are numbers/milliseconds) ---
-        // Access existing dates directly as numbers and compare with new dates converted to milliseconds
-        if (bookingData?.startDate === newStartDateTime.getTime() && bookingData?.endDate === newEndDateTime.getTime()) {
-             // Optional: Check if the fetched data has the expected date properties
-             if (typeof bookingData?.startDate !== 'number' || typeof bookingData?.endDate !== 'number') {
-                  console.warn(`Booking ${bookingId} has unexpected date format. Expected numbers, got:`, bookingData?.startDate, bookingData?.endDate);
-                  // Decide if you want to return an error or attempt to proceed
-                  // For now, we'll let it proceed but log the warning.
-             } else {
-                 return res.status(400).json({ message: "No changes detected in dates" });
-             }
-        }
-
-
-        // --- Check room availability for the new dates ---
-        // NOTE: Your checkRoomAvailability function needs to correctly compare
-        // the provided newStartDateTime and newEndDateTime (which are Date objects)
-        // against the dates stored in the database (which are numbers/milliseconds).
-        // Inside checkRoomAvailability, you MUST convert the stored milliseconds
-        // back to Date objects using `new Date(milliseconds)` for comparison.
-        const isRoomAvailable = await checkRoomAvailability(bookingData?.roomId, newStartDateTime, newEndDateTime); // Pass bookingId to exclude current booking from availability check
+        const isRoomAvailable = await checkRoomAvailability(bookingData?.roomIds, newStartDateTime || bookingData?.startDate, newEndDateTime || bookingData?.endDate); // Pass bookingId to exclude current booking from availability check
         if (!isRoomAvailable) {
-             return res.status(400).json({ message: "Room is not available for the selected dates" });
+            return res.status(400).json({ message: "Room is not available for the selected dates" });
         }
+
+
+        let updatedData: any = {}
+
+        if(roomId !== undefined) updatedData.roomId = roomId; // Update roomId if provided
+        if (startDate && endDate) {
+            updatedData.startDate = newStartDateTime?.toISOString();
+            updatedData.endDate = newEndDateTime?.toISOString();
+        }
+        if (children !== undefined) updatedData.children = children; // Update children count if provided
+        if (adult !== undefined) updatedData.adult = adult; // Update adult count if provided
+        if (elder !== undefined) updatedData.elder = elder; // Update elder count if provided
 
 
         // --- Proceed to update the booking, storing dates as milliseconds ---
         await bookingSnapshot.ref.update({
-            startDate: newStartDateTime.getTime(), // Save new start date as milliseconds
-            endDate: newEndDateTime.getTime(),   // Save new end date as milliseconds
+            ...updatedData,
             // Optionally update an 'updatedAt' field
             updatedAt: new Date().getTime(), // Store update time as milliseconds
         });
@@ -263,22 +256,22 @@ const getAllBookings = async (req: any, res: any) => {
 
         // Map through the documents and format date fields to ISO strings
         const bookings = bookingsSnapshot.docs.map((doc: any) => {
-             const data = doc.data();
+            const data = doc.data();
 
-             // Use the safeToDate helper to convert Firebase Timestamp objects to Date objects
-             const startDate = helperFunction.safeToDate(data.startDate);
-             const endDate = helperFunction.safeToDate(data.endDate);
-             const createdAt = helperFunction.safeToDate(data.createdAt);
+            // Use the safeToDate helper to convert Firebase Timestamp objects to Date objects
+            const startDate = helperFunction.safeToDate(data.startDate);
+            const endDate = helperFunction.safeToDate(data.endDate);
+            const createdAt = helperFunction.safeToDate(data.createdAt);
 
-             return {
-                 id: doc.id,
-                 userId: data.userId,
-                 roomId: data.roomId,
-                 // Format valid Date objects to ISO strings, otherwise return null
-                 startDate: startDate ? startDate.toISOString() : null,
-                 endDate: endDate ? endDate.toISOString() : null,
-                 createdAt: createdAt ? createdAt.toISOString() : null,
-             };
+            return {
+                id: doc.id,
+                userId: data.userId,
+                roomId: data.roomId,
+                // Format valid Date objects to ISO strings, otherwise return null
+                startDate: startDate ? startDate.toISOString() : null,
+                endDate: endDate ? endDate.toISOString() : null,
+                createdAt: createdAt ? createdAt.toISOString() : null,
+            };
         });
 
         // Return the array of formatted bookings directly
