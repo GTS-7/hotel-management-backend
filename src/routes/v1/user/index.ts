@@ -7,11 +7,16 @@ import verifyUser from "../middlewares/verifyUser.js";
 import userController from "./controller/userController.js";
 import adminController from "../admin/controllers/adminController.js";
 
+// Google Oauth routes
+router.get("/auth/google", userAuthController.handleGoogleAuth);
+// Google Oauth callback route
+router.get("/auth/google/callback", userAuthController.handleGoogleCallback);
+
+
 // Routes without middleware checks
 router
   .post("/register", userAuthController.handleRegistration)
-  .post("/login", userAuthController.handleLogin);
-
+  .post("/login", userAuthController.handleLogin)
 // Authenticated routes for user
 router.use(verifyUser);
 
