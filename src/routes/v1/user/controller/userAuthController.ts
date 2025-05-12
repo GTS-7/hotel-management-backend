@@ -189,7 +189,7 @@ const handleGoogleCallback = (req:any, res:any) => {
         } catch (error) {
             console.error("Error during Google OAuth callback custom handler:", error);
             // Redirect to frontend login with an error indicator if something goes wrong
-            res.redirect(process.env.FRONTEND_LOGIN_URL + '?authError=true');
+            res.redirect(process.env.FRONTEND_LOGIN_URL);
         }
     })(req, res); // Call the middleware returned by passport.authenticate with req and res
 
