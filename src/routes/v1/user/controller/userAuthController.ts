@@ -1,51 +1,139 @@
+// userAuthController.js
 import db from "../../../../config/db.js";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import passport from "passport";
+import bcrypt from 'bcrypt';
+import { Request, Response } from "express";
 
-// Token secret
-const tokenSecret = process.env.TOKEN_SECRET || "default-secret";
+const frontendLoginUrl = process.env.FRONTEND_LOGIN_URL || 'http://localhost:3000/login'; // Load frontend URLs from env
+const frontendDashboardUrl = process.env.FRONTEND_DASHBOARD_URL || 'http://localhost:3000/dashboard';
 
-const handleRegistration = async (req: any, res: any) => {
+const saltRounds = 10;
+
+// --- Handle Registration ---
+const handleRegistration = async (req: Request, res: Response) => { // Use req, res directly
   try {
-    const { fullName, email } = req.body;
-    if (!fullName || !email)
-      return res.status(400).json({ message: "Please send the required details..." });
+    const { fullName, email, password } = req.body; // Accept password from body
+
+    if (!fullName || !email || !password) // Require password
+      return res.status(400).json({ message: "Please send the required details (Full Name, Email, Password)." });
 
     // Check if email already exists
     const userSnapShot = await db.collection("users").where("email", "==", email).get();
     if (!userSnapShot.empty) return res.status(400).json({ message: "Email already registered" });
 
-    // Create user
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    console.log("Password hashed successfully.");
+
+    // Create user in Firestore
+    // Use email as the document ID as per your existing schema
     const newUserRef = db.collection("users").doc(email);
     await newUserRef.set({
       fullName,
       email,
+      password: hashedPassword, // Store the hashed password
       createdAt: new Date().toISOString(),
+      // Add googleId: null or undefined here if you want to explicitly track auth method
     });
+    console.log("New user created in Firestore:", email);
 
-    res.status(200).json({ message: "User registered successfully" });
+    // --- Generate JWT and set cookie upon successful registration ---
+    // This ensures the user is automatically logged in after registering
+
+    const userId = email; // User ID is the email
+    const clientDeviceId = uuidv4(); // Generate a device ID for this session
+
+    // Manage sessions (max 2 devices) - Reusing your existing logic
+    const sessionSnapshot = await db
+      .collection("sessions")
+      .where("userId", "==", userId)
+      .orderBy("createdAt")
+      .get();
+
+    const sessions = sessionSnapshot.docs;
+    if (sessions.length >= 2) {
+      console.log("Max sessions reached for user", userId, ". Deleting oldest session:", sessions[0].id);
+      const oldestSession = sessions[0];
+      await db.collection("sessions").doc(oldestSession.id).delete();
+    }
+
+    // Create a new session entry in Firestore
+    const sessionId = uuidv4(); // Unique ID for the session document
+    await db.collection("sessions").doc(sessionId).set({
+      userId: userId, // Link session to user ID
+      clientDeviceId: clientDeviceId, // Store the device ID associated with this session
+      createdAt: new Date().toISOString(),
+      ipAddress: req.ip, // May need configuration for proxy servers to get real IP
+      userAgent: req.headers["user-agent"],
+    });
+    console.log(`New session created in Firestore: ${sessionId} for user ${userId}`);
+
+    // Generate JWT token using user email and the generated clientDeviceId
+    const tokenSecret = process.env.TOKEN_SECRET; // Ensure this is loaded
+    if (!tokenSecret) {
+      console.error("TOKEN_SECRET is not defined!");
+      return res.status(500).send("Server configuration error.");
+    }
+
+    const jwtToken = jwt.sign(
+      { email: email, clientDeviceId: clientDeviceId }, // Payload: user email and device ID
+      tokenSecret,                                         // Secret key from .env
+      { expiresIn: "7d" }                                  // Token expiration (e.g., 7 days)
+    );
+    console.log("JWT token generated for user", email);
+
+    // Set the authentication cookie in the user's browser
+    res.cookie("authToken", jwtToken, {
+      httpOnly: true, // Makes the cookie inaccessible to client-side JavaScript (security)
+      secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS in production
+      sameSite: "lax", // Helps prevent CSRF (consider 'none' if frontend/backend are on different domains AND you use HTTPS)
+      maxAge: 7 * 24 * 60 * 60 * 1000, // Cookie expiration in milliseconds (7 days)
+    });
+    console.log("Auth cookie 'authToken' set for user", email);
+
+    // Send success response
+    res.status(201).json({ message: "User registered and logged in successfully" }); // Use 201 for created
+
   } catch (error) {
-    console.log("Error while registering: ", error);
+    console.error("Error while registering: ", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// login function
-const handleLogin = async (req: any, res: any) => {
+// --- Handle Login ---
+const handleLogin = async (req: Request, res: Response) => { // Use req, res directly
   try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ message: "Please send the required details..." });
+    const { email, password } = req.body; // Accept password from body
 
-    const clientDeviceId = uuidv4();
-    if (!clientDeviceId) return res.status(400).json({ message: "Error creating device id..." });
+    if (!email || !password) // Require password
+      return res.status(400).json({ message: "Please provide email and password." });
 
     const userRef = db.collection("users").doc(email);
     const userSnapShot = await userRef.get();
 
     if (!userSnapShot.exists) return res.status(400).json({ message: "User not found" });
 
-    const userId = userSnapShot.id;
+    const userData = userSnapShot.data();
+
+    if (!userData || !userData.password) {
+      console.log("Login failed: User", email, "does not have a password set (likely registered via OAuth).");
+      return res.status(401).json({ message: "Invalid credentials" }); // Or "Please sign in with Google"
+    }
+    // --- END ADDITION ---
+
+    // Compare provided password with the stored hashed password
+    const passwordMatch = await bcrypt.compare(password, userData.password);
+
+    if (!passwordMatch) {
+      console.log("Login failed: Invalid password for user", email);
+      return res.status(401).json({ message: "Invalid credentials" }); // Use 401 for unauthorized
+    }
+    console.log("Password matched for user", email);
+
+
+    const userId = userSnapShot.id; // This is the email
 
     // Manage sessions (max 2 devices)
     const sessionSnapshot = await db
@@ -56,158 +144,169 @@ const handleLogin = async (req: any, res: any) => {
 
     const sessions = sessionSnapshot.docs;
     if (sessions.length >= 2) {
+      console.log("Max sessions reached for user", userId, ". Deleting oldest session:", sessions[0].id);
       const oldestSession = sessions[0];
       await db.collection("sessions").doc(oldestSession.id).delete();
     }
 
-    const sessionId = uuidv4();
+    const sessionId = uuidv4(); // Unique ID for the session document
     await db.collection("sessions").doc(sessionId).set({
-      userId,
-      clientDeviceId,
+      userId, // Link session to user ID (email)
+      clientDeviceId: uuidv4(), // Generate a new device ID for this login session
       createdAt: new Date().toISOString(),
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
     });
+    console.log(`New session created in Firestore: ${sessionId} for user ${userId}`);
 
     // Generate JWT token
-    const jwtToken = jwt.sign({ email, clientDeviceId }, tokenSecret, {
+    const tokenSecret = process.env.TOKEN_SECRET; // Ensure this is loaded
+    if (!tokenSecret) {
+      console.error("TOKEN_SECRET is not defined!");
+      return res.status(500).send("Server configuration error.");
+    }
+
+    const jwtToken = jwt.sign({ email: userId, clientDeviceId: sessionId }, tokenSecret, { // Use userId (email) and sessionId for clarity in payload
       expiresIn: "7d",
     });
+    console.log("JWT token generated for user", userId);
 
     res.cookie("authToken", jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: "lax", // Changed from "none" to "lax" - "none" requires HTTPS and is less secure if not needed cross-site
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    console.log("Auth cookie 'authToken' set for user", userId);
 
-    res.status(200).json({ message: "Login successful", token: jwtToken });
+    res.status(200).json({ message: "Login successful" }); // Removed sending token in body if using httpOnly cookie
   } catch (error) {
-    console.log("Error while logging in: ", error);
+    console.error("Error while logging in: ", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-const handleGoogleAuth = (req: any, res: any, next: Function) => {
-    console.log("Initiating Google OAuth flow...");
-    // Use Passport's authenticate middleware directly.
-    // It will handle redirecting the user to Google.
-    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+
+
+// --- Google OAuth Handlers (Keep as is, they are working) ---
+
+const handleGoogleAuth = (req: Request, res: Response, next: Function) => { // Use req, res, next directly
+  console.log("Initiating Google OAuth flow...");
+  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
 };
 
-// Handler for the Google OAuth callback
-// This function is called AFTER Passport successfully authenticates with Google
-// and the verify callback in server.js has completed.
-const handleGoogleCallback = (req:any, res:any) => {
-    console.log("Handling Google OAuth callback...");
-    // req.user is populated by Passport's verify callback in server.js
-    // It contains the user object from your database.
+const handleGoogleCallback = (req: Request, res: Response) => { // Use req, res directly
+  console.log("Handling Google OAuth callback...");
+  passport.authenticate('google', {
+    failureRedirect: frontendLoginUrl ,
+    session: false
+  }, async (err, user) => {
+    if (err || !user) {
+      console.error("Passport authentication failed in callback:", err);
+      return res.redirect(frontendLoginUrl );
+    }
 
-    // Use Passport's authenticate middleware again.
-    // It will check the state and code from Google.
-    // If successful, it calls the next middleware in the chain (which is this function itself).
-    // If failure, it redirects to the failureRedirect URL defined in server.js.
-    passport.authenticate('google', {
-        failureRedirect: process.env.FRONTEND_LOGIN_URL + '?authError=true', // Redirect on Passport auth failure
-        session: false // Ensure Passport doesn't try to manage sessions here
-    }, async (err, user) => {
-        // This custom callback allows us to handle the result of passport.authenticate
-        // and then run our custom session/JWT logic.
+    console.log("Passport authentication successful. User:", user.email);
 
-        if (err || !user) {
-            console.error("Passport authentication failed in callback:", err);
-            // Redirect to frontend login with error
-            return res.redirect(process.env.FRONTEND_LOGIN_URL + '?authError=true');
-        }
+    try {
+      // --- Apply session/JWT logic using the 'user' object from Passport ---
+      const userId = user.id; // User ID from Passport's verify callback (email)
+      const clientDeviceId = uuidv4(); // Generate a new device ID
 
-        console.log("Passport authentication successful. User:", user.email);
+      // Check and manage sessions
+      const sessionSnapshot = await db
+        .collection("sessions")
+        .where("userId", "==", userId)
+        .orderBy("createdAt")
+        .get();
 
-        try {
-            // --- Apply your existing session/JWT logic here ---
-            // This is the same logic as in your handleLogin function,
-            // but uses the 'user' object provided by Passport.
+      const sessions = sessionSnapshot.docs;
+      if (sessions.length >= 2) {
+        console.log("Max sessions reached for user", userId, ". Deleting oldest session:", sessions[0].id);
+        const oldestSession = sessions[0];
+        await db.collection("sessions").doc(oldestSession.id).delete();
+      }
 
-            const userId = user.id; // Your user ID (email)
-            const clientDeviceId = uuidv4(); // Generate a new device ID for this login session
+      // Create a new session entry
+      const sessionId = uuidv4();
+      await db.collection("sessions").doc(sessionId).set({
+        userId: userId,
+        clientDeviceId: clientDeviceId,
+        createdAt: new Date().toISOString(),
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      console.log(`New session created in Firestore: ${sessionId} for user ${userId}`);
 
-            // Check and manage sessions (limit to 2)
-            const sessionSnapshot = await db
-                .collection("sessions")
-                .where("userId", "==", userId)
-                .orderBy("createdAt")
-                .get();
+      // Generate JWT token
+      const tokenSecret = process.env.TOKEN_SECRET;
+      if (!tokenSecret) {
+        console.error("TOKEN_SECRET is not defined!");
+        return res.redirect(frontendLoginUrl );
+      }
 
-            const sessions = sessionSnapshot.docs;
-            if (sessions.length >= 2) {
-                console.log("Max sessions reached for user", userId, ". Deleting oldest session:", sessions[0].id);
-                const oldestSession = sessions[0];
-                await db.collection("sessions").doc(oldestSession.id).delete();
-            }
+      const jwtToken = jwt.sign(
+        { email: user.email, clientDeviceId: clientDeviceId },
+        tokenSecret,
+        { expiresIn: "7d" }
+      );
+      console.log("JWT token generated for user", user.email);
 
-            // Create a new session entry in Firestore
-            const sessionId = uuidv4(); // Unique ID for the session document
-            await db.collection("sessions").doc(sessionId).set({
-                userId: userId, // Link session to user ID
-                clientDeviceId: clientDeviceId, // Store the device ID
-                createdAt: new Date().toISOString(),
-                ipAddress: req.ip, // May need configuration for proxy servers
-                userAgent: req.headers["user-agent"],
-            });
-            console.log(`New session created in Firestore: ${sessionId} for user ${userId}`);
+      // Set the authentication cookie
+      res.cookie("authToken", jwtToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax", // Changed from "none" to "lax"
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      console.log("Auth cookie 'authToken' set for user", user.email);
 
+      // Redirect the user back to the frontend dashboard
+      console.log(`Redirecting user to frontend dashboard: ${frontendDashboardUrl}`);
+      res.redirect(frontendDashboardUrl);
 
-            // Generate JWT token
-            const tokenSecret = process.env.TOKEN_SECRET; // Ensure this is loaded
-            if (!tokenSecret) {
-                 console.error("TOKEN_SECRET is not defined!");
-                 // Redirect to frontend login with error
-                 return res.redirect(process.env.FRONTEND_LOGIN_URL + '?authError=true');
-            }
-
-            const jwtToken = jwt.sign(
-                { email: user.email, clientDeviceId: clientDeviceId }, // Payload: user email and device ID
-                tokenSecret,                                         // Secret key
-                { expiresIn: "7d" }                                  // Token expiration
-            );
-            console.log("JWT token generated for user", user.email);
-
-
-            // Set the authentication cookie
-            res.cookie("authToken", jwtToken, {
-                httpOnly: true, // Makes the cookie inaccessible to client-side JavaScript
-                secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS
-                sameSite: "Lax", // Helps prevent CSRF
-                maxAge: 7 * 24 * 60 * 60 * 1000, // Cookie expiration
-            });
-             console.log("Auth cookie 'authToken' set for user", user.email);
-
-
-            // --- Redirect the user back to the frontend dashboard ---
-            console.log(`Redirecting user to frontend dashboard: ${process.env.FRONTEND_DASHBOARD_URL}`);
-            const frontendDashboardUrl = process.env.FRONTEND_DASHBOARD_URL || "http://localhost:3000/dashboard";
-            res.redirect(frontendDashboardUrl + '?authSuccess=true');
-
-        } catch (error) {
-            console.error("Error during Google OAuth callback custom handler:", error);
-            // Redirect to frontend login with an error indicator if something goes wrong
-            res.redirect(process.env.FRONTEND_LOGIN_URL);
-        }
-    })(req, res); // Call the middleware returned by passport.authenticate with req and res
-
+    } catch (error) {
+      console.error("Error during Google OAuth callback custom handler:", error);
+      res.redirect(frontendLoginUrl );
+    }
+  })(req, res); // Call the middleware returned by passport.authenticate with req and res
 };
-// --- End New Google OAuth Handlers ---
+// --- End Google OAuth Handlers ---
 
-const handleLogout = async (req: any, res: any) => {
+
+// --- Handle Logout ---
+const handleLogout = async (req: Request, res: Response) => { // Use req, res directly
   try {
+    // Assuming clientDeviceId is sent in the body for logout
+    // A more robust logout might use the JWT payload to find the session
     const { clientDeviceId } = req.body;
     if (!clientDeviceId) return res.status(400).json({ message: "Client device ID is required" });
 
-    // Delete the session
-    const sessionRef = db.collection("sessions").doc(clientDeviceId);
-    await sessionRef.delete();
+    // Delete the session document based on clientDeviceId
+    // Note: Your sessions are indexed by sessionId (uuidv4), not clientDeviceId.
+    // You would need to query for the session document by clientDeviceId.
+    console.log("Attempting to find and delete session for clientDeviceId:", clientDeviceId);
+    const sessionSnapshot = await db.collection("sessions").where("clientDeviceId", "==", clientDeviceId).get();
+
+    if (sessionSnapshot.empty) {
+      console.log("Session not found for clientDeviceId:", clientDeviceId);
+      // Even if not found, clear the cookie just in case
+      res.clearCookie("authToken");
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    // Delete the found session document(s)
+    const deletePromises = sessionSnapshot.docs.map(doc => doc.ref.delete());
+    await Promise.all(deletePromises);
+    console.log(`Deleted ${sessionSnapshot.docs.length} session(s) for clientDeviceId:`, clientDeviceId);
+
+    // Clear the authentication cookie from the browser
+    res.clearCookie("authToken");
+    console.log("Auth cookie 'authToken' cleared.");
+
 
     res.status(200).json({ message: "Logout successful" });
   } catch (error) {
-    console.log("Error while logging out: ", error);
+    console.error("Error while logging out: ", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

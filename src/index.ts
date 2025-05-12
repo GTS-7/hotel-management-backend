@@ -57,7 +57,6 @@ passport.use(new GoogleStrategy({
 
     try {
       const email = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
-      const googleId = profile.id; // Google's unique ID for the user
       const fullName = profile.displayName; // User's name from Google
 
       if (!email) {
