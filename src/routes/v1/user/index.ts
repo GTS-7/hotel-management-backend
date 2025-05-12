@@ -29,10 +29,10 @@ router
 router
   .get("/room", adminController.getRooms)
 
-// Cart routes
-router
-  .post("/cart", userController.handleCart)
-  .get("/cart", userController.getCartItems)
-  .delete("/cart", userController.deleteCartItem);
+// // Cart routes
+// router
+//   .post("/cart", userController.handleCart)
+//   .get("/cart", userController.getCartItems)
+//   .delete("/cart", userController.deleteCartItem);
 
 export default router;
