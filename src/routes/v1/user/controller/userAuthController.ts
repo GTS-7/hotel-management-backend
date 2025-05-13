@@ -15,7 +15,7 @@ const saltRounds = 10;
 const handleRegistration = async (req: Request, res: Response) => { // Use req, res directly
   try {
     const { fullName, email, password } = req.body; // Accept password from body
-
+    console.log("Registration request received:", { fullName, email , password});
     if (!fullName || !email || !password) // Require password
       return res.status(400).json({ message: "Please send the required details (Full Name, Email, Password)." });
 
@@ -88,7 +88,7 @@ const handleRegistration = async (req: Request, res: Response) => { // Use req, 
     res.cookie("authToken", jwtToken, {
       httpOnly: true, // Makes the cookie inaccessible to client-side JavaScript (security)
       secure: process.env.NODE_ENV === "production", // Only send cookie over HTTPS in production
-      sameSite: "lax", // Helps prevent CSRF (consider 'none' if frontend/backend are on different domains AND you use HTTPS)
+      sameSite: "lax", // Helps prevent CSRF (consider 'lax' if frontend/backend are on different domains AND you use HTTPS)
       maxAge: 7 * 24 * 60 * 60 * 1000, // Cookie expiration in milliseconds (7 days)
     });
     console.log("Auth cookie 'authToken' set for user", email);
@@ -174,7 +174,7 @@ const handleLogin = async (req: Request, res: Response) => { // Use req, res dir
     res.cookie("authToken", jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", // Changed from "none" to "lax" - "none" requires HTTPS and is less secure if not needed cross-site
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     console.log("Auth cookie 'authToken' set for user", userId);
@@ -255,7 +255,7 @@ const handleGoogleCallback = (req: Request, res: Response) => { // Use req, res 
       res.cookie("authToken", jwtToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax", // Changed from "none" to "lax"
+        sameSite: "lax", // Changed from "lax" to "lax"
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       console.log("Auth cookie 'authToken' set for user", user.email);
