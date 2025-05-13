@@ -4,7 +4,7 @@ import cors from "cors";
 import { v2 as cloudinary } from 'cloudinary';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'; // Import Google Strategy
-
+import cookieParser from 'cookie-parser';
 
 // the database connection
 import db from "./config/db.js"; 
@@ -39,6 +39,7 @@ checkFirebase();
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 const allowedOrigins = [
   'http://localhost:3000',
