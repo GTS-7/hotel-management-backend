@@ -282,6 +282,36 @@ const getAllBookings = async (req: any, res: any) => {
     }
 };
 
+const handleBookingCancelation = async (req: any, res: any) => {
+    try {
+        // const { bookingId } = req.params;
+        // if (!bookingId) {
+        //     return res.status(400).json({ message: "Booking ID is required" });
+        // }
+
+        // const bookingRef = db.collection("bookings").doc(bookingId);
+        // const bookingSnapshot = await bookingRef.get();
+        // if(!bookingSnapshot.exists) {
+        //     return res.status(404).json({ message: "Booking not found" });
+        // }
+
+        // const bookingData = bookingSnapshot.data();
+        // const currentDate = new Date().getTime(); // Get current date in milliseconds
+        // const bookingEndDate = helperFunction.safeToDate(bookingData?.endDate)?.getTime(); // Get booking
+
+        // if (bookingEndDate === undefined || bookingEndDate > currentDate) {
+        //     return res.status(400).json({ message: "Cannot cancel a booking that has already ended" });
+        // }
+
+        // // Proceed to delete the booking
+        // await bookingRef.delete();
+        // return res.status(200).json({ message: "Booking canceled successfully" });
+    } catch (error) {
+        console.error("Error handling booking cancelation:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 export default {
     handleBooking,
     checkAvailability,
@@ -289,4 +319,5 @@ export default {
     getBooking,
     deleteBooking,
     getAllBookings,
+    handleBookingCancelation,
 }
