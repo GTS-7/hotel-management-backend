@@ -7,7 +7,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20'; // Import 
 import cookieParser from 'cookie-parser';
 
 // the database connection
-import db from "./config/db.js"; 
+import db from "./config/db.js";
 
 import v1Router from "./routes/v1/index.js";
 
@@ -43,12 +43,13 @@ app.use(cookieParser());
 
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3001',
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
@@ -61,10 +62,10 @@ app.use(cors({
 app.use(passport.initialize());
 
 passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID || "",         
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",   
-  callbackURL: process.env.GOOGLE_CALLBACK_URL,  
-  scope: ['profile', 'email']                    
+  clientID: process.env.GOOGLE_CLIENT_ID || "",
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+  callbackURL: process.env.GOOGLE_CALLBACK_URL,
+  scope: ['profile', 'email']
 },
   async (accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void) => {
     // This function is called by Passport after Google successfully authenticates the user.
@@ -161,6 +162,7 @@ passport.deserializeUser(async (id, done) => {
 
 
 // routes for api calls
+app.use(express.static('public'));
 // Make sure this line is AFTER the passport initialization
 app.use("/api/v1", v1Router);
 

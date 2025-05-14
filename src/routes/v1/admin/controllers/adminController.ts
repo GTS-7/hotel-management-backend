@@ -3,34 +3,56 @@ import cloudinary from "../../../../config/cloudinary.js";
 import sharp from "sharp";
 import helperFunctions from "../../../../config/helperFunctions.js";
 
-// Controllers for handling room management
 const handleCreateRoom = async (req: any, res: any) => {
   try {
-    let { roomName, roomType, beds, price, highlights } = req.body;
+    // Destructure all required fields from the request body
+    let {
+      roomName,
+      roomType,
+      beds,
+      adultCapacity,  // Changed from capacity to adultCapacity
+      childrenCapacity, // Added childrenCapacity
+      size,
+      amenities,
+      price,
+      view,
+      features
+    } = req.body;
+
     const files = req.files as Express.Multer.File[];
 
+    // Parse features
     try {
-      highlights = JSON.parse(highlights);
+      features = JSON.parse(features);
+      if (!Array.isArray(features)) {
+         return res.status(400).json({ message: "Features must be an array" });
+      }
     } catch {
-      return res.status(400).json({ message: "Invalid highlights format" });
+      return res.status(400).json({ message: "Invalid features format" });
     }
 
-    if (!roomName || !roomType || !beds || !price || !files?.length || !highlights) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Validate all required fields, including the new capacity fields
+    if (!roomName || !roomType || !beds || adultCapacity === undefined || childrenCapacity === undefined || !size || !amenities || !price || !view || !files?.length || !features || features.length === 0) {
+      return res.status(400).json({ message: "All fields (roomName, roomType, beds, adultCapacity, childrenCapacity, size, amenities, price, view, features, and at least one image) are required" });
+    }
+
+    // Optional: Add validation to ensure capacity fields are numbers
+    if (isNaN(parseInt(adultCapacity)) || isNaN(parseInt(childrenCapacity))) {
+         return res.status(400).json({ message: "Adult and Children Capacity must be numbers" });
     }
 
     // Step 1: Compress all images in parallel
     const compressedImages = await Promise.all(
       files.map(async (file) => {
         const format = file.mimetype.split("/")[1];
-        let transformer = sharp(file.buffer).resize({ width: 1024 });
+        let transformer = sharp(file.buffer).resize({ width: 1024 }); // Resize for web
 
         if (format === "png") {
-          transformer = transformer.png({ quality: 80 });
+          transformer = transformer.png({ quality: 80 }); // Optimize PNG
         } else if (format === "webp") {
-          transformer = transformer.webp({ quality: 70 });
+          transformer = transformer.webp({ quality: 70 }); // Optimize WebP
         } else {
-          transformer = transformer.jpeg({ quality: 70 });
+          transformer = transformer.jpeg({ quality: 70 }); // Optimize JPEG
         }
 
         return transformer.toBuffer();
@@ -41,36 +63,51 @@ const handleCreateRoom = async (req: any, res: any) => {
     const uploadPromises = compressedImages.map((buffer) => {
       return new Promise<string>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          { folder: "hotel_rooms" },
+          { folder: "hotel_rooms" }, // Specify a folder in Cloudinary
           (error, result) => {
-            if (error || !result) return reject(error);
-            resolve(result.secure_url);
+            if (error || !result) {
+                console.error("Cloudinary upload error:", error);
+                return reject(error);
+            }
+            resolve(result.secure_url); // Resolve with the secure URL
           }
         );
-        uploadStream.end(buffer);
+        uploadStream.end(buffer); // End the stream with the image buffer
       });
     });
 
-    const photoUrls = await Promise.all(uploadPromises);
+    const imageUrls = await Promise.all(uploadPromises); // Get all uploaded image URLs
 
     // Step 3: Store room in DB
-    const newRoomRecord = await db.collection("rooms").add({
-      roomName,
-      roomType,
-      beds,
-      price,
-      photos: photoUrls,
-      highlights,
-      createdAt: new Date(),
-    });
+    // First, add the room without the id field to get the generated document reference
+    const roomData = {
+      name: roomName,
+      type: roomType,
+      beds: beds,
+      adultCapacity: parseInt(adultCapacity), // Store adult capacity as number
+      childrenCapacity: parseInt(childrenCapacity), // Store children capacity as number
+      size: size,
+      amenities: amenities,
+      price: price,
+      view: view,
+      features: features,
+      images: imageUrls,
+      availability: true, // Default to available upon creation
+      createdAt: new Date(), // Add a timestamp
+    };
+
+    const newRoomRecord = await db.collection("rooms").add(roomData);
+
+    // Optionally, update the document to include its own ID
+    await newRoomRecord.update({ id: newRoomRecord.id });
 
     return res.status(201).json({
       message: "Room created successfully",
-      roomId: newRoomRecord.id,
+      roomId: newRoomRecord.id, // Return the newly created room ID
     });
   } catch (error) {
     console.error("Error creating room:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error during room creation" });
   }
 };
 
