@@ -6,8 +6,10 @@ import helperFunctions from "../../../../config/helperFunctions.js";
 // Controllers for handling room management
 const handleCreateRoom = async (req: any, res: any) => {
   try {
-    let { roomName, roomType, beds, price, additionalBedCost, amenities, roomSize } = req.body;
+    let { roomName, roomType, beds, price, additionalBedCost, amenities, roomSize, extraFacilities } = req.body;
     const files = req.files as Express.Multer.File[];
+
+    // const parsedExtraFacilities = JSON.parse(extraFacilities);
 
     if (!roomName || !roomType || !beds || !price || !files?.length || !additionalBedCost || !amenities || !roomSize) {
       return res.status(400).json({ message: "All fields are required" });
@@ -57,6 +59,7 @@ const handleCreateRoom = async (req: any, res: any) => {
       amenities,
       additionalBedCost,
       roomSize,
+      // extraFacilities: extraFacilities,
       createdAt: new Date(),
     });
 
