@@ -5,7 +5,7 @@ const router = express.Router();
 import userAuthController from "./controller/userAuthController.js"
 import verifyUser from "../middlewares/verifyUser.js";
 import userController from "./controller/userController.js";
-import adminController from "../admin/controllers/adminController.js";
+import roomController from "../rooms/controllers/roomController.js";
 
 // Type assertion helper to handle Express route handlers
 // This converts a function that returns Promise<Response> to a standard Express RequestHandler
@@ -34,8 +34,7 @@ router.post("/logout", asyncHandler(userAuthController.handleLogout));
 router.get("/user", asyncHandler(userController.getUserDetails));
 router.put("/user", asyncHandler(userController.updateUserDetails));
 
-// Room management routes
-router.get("/room", asyncHandler(adminController.getRooms));
+
 
 // Commented out cart routes
 // router.post("/cart", asyncHandler(userController.handleCart));

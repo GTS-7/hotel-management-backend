@@ -6,7 +6,7 @@ import helperFunctions from "../../../../config/helperFunctions.js";
 // Controllers for handling room management
 const handleCreateRoom = async (req: any, res: any) => {
   try {
-    let { roomName, roomType, beds, price, additionalBedCost, amenities, roomSize, extraFacilities } = req.body;
+    let { roomName, roomType, beds, price, additionalBedCost, amenities, roomSize } = req.body;
     const files = req.files as Express.Multer.File[];
 
     // const parsedExtraFacilities = JSON.parse(extraFacilities);

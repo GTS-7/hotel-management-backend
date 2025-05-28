@@ -21,6 +21,27 @@ const getRoomTypes = async (req: any, res: any) => {
     }
 };
 
+const getRooms = async (req: any, res: any) => {
+  try {
+    const roomsSnapshot = await db.collection("rooms").get();
+    if (roomsSnapshot.empty) {
+      return res.status(404).json({ message: "No rooms found" });
+    }
+
+    // Map through the documents and return an array of room objects
+    const rooms = roomsSnapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.status(200).json(rooms);
+  } catch (error) {
+    console.error("Error fetching rooms:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export default {
     getRoomTypes,
+    getRooms
 }
