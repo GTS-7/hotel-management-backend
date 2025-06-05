@@ -34,11 +34,17 @@ const checkFirebase = async () => {
     console.error("❌ Firebase connection error:", error);
   }
 };
+
+// Check Firebase connection
 checkFirebase();
 
+// Middleware to parse JSON bodies
 app.use(express.json());
 
+// Middleware to parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
+
+// Middleware to parse cookies
 app.use(cookieParser());
 
 const allowedOrigins = [
@@ -47,7 +53,9 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
+
   origin: function (origin, callback) {
+
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.indexOf(origin) === -1) {
@@ -55,8 +63,11 @@ app.use(cors({
       return callback(new Error(msg), false);
     }
     return callback(null, true);
+
   },
+  
   credentials: true
+
 }));
 
 app.use(passport.initialize());
@@ -158,6 +169,7 @@ passport.deserializeUser(async (id, done) => {
     console.error("Error deserializing user (stub):", error);
     done(error, null);
   }
+
 });
 
 
@@ -169,4 +181,3 @@ app.use("/api/v1", v1Router);
 // Server initialization completed successfully
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
