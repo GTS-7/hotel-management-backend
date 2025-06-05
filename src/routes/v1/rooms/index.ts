@@ -13,4 +13,7 @@ router.use(verifyUser as RequestHandler);
 // Routes that require authentication
 router.post('/review', reviewController.handleRoomReviews);
 
+router
+.get('/room', roomController.getRooms)
+.get('/room/:id', roomController.getRoomById)
 export default router;

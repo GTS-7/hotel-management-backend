@@ -41,7 +41,26 @@ const getRooms = async (req: any, res: any) => {
   }
 };
 
+const getRoomById = async (req: any, res: any) => {
+  try {
+    const roomId = req.params.id;
+    console.log(roomId)
+    const roomDoc = await db.collection("rooms").doc(roomId).get();
+    if (!roomDoc.exists) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+    const roomData = roomDoc.data();
+    res.status(200).json({ id: roomDoc.id, ...roomData });
+    
+  } catch (error) {
+    console.error("Error fetching room by ID:", error);
+    res.status(500).json({ message: "Internal server error" });
+    
+  }
+}
+
 export default {
     getRoomTypes,
-    getRooms
+    getRooms,
+    getRoomById
 }
