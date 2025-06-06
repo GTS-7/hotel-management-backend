@@ -28,7 +28,7 @@ router
 // Booking management routes
 router
   .get("/booking", bookingController.getAllBookings)
-  .delete("/booking/:bookingId", bookingController.deleteBooking)
+  // .delete("/booking/:bookingId", bookingController.deleteBooking)
   .put("/booking", bookingController.updateBooking);
 
 export default router;
