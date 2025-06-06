@@ -35,7 +35,7 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // 1. Get token from cookie
     const token = req.cookies.authToken;
-
+    console.log("Token from cookie:", token);
     // Check if token exists
     if (!token) {
       return res.status(401).json({
@@ -63,6 +63,7 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
         decoded = jwt.verify(token, tokenSecret) as UserPayload;
         // Basic check to ensure expected fields are present after decoding
         if (!decoded.email || !decoded.clientDeviceId) {
+             console.warn("Token decoded successfully but missing required fields (email or clientDeviceId).");
              console.warn("Token decoded successfully but missing required fields (email or clientDeviceId).");
              res.clearCookie("authToken");
              return res.status(401).json({

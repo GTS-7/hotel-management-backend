@@ -1,3 +1,5 @@
+import { NextFunction, Request, RequestHandler, Response } from "express";
+
 // Helper function to safely convert data to a Date object, handling Firebase Timestamps
 const safeToDate = (data: any): Date | null => {
     // Check if it's already a Date object
@@ -12,21 +14,21 @@ const safeToDate = (data: any): Date | null => {
             // Convert seconds and nanoseconds to milliseconds
             const milliseconds = seconds * 1000 + Math.round(data.nanoseconds / 1000000);
             const date = new Date(milliseconds);
-             if (isNaN(date.getTime())) {
+            if (isNaN(date.getTime())) {
                 console.warn("Failed to create Date from Firebase Timestamp object:", data);
                 return null;
-             }
+            }
             return date;
         }
-         console.warn("Firebase Timestamp object has invalid data types:", data);
-         return null;
+        console.warn("Firebase Timestamp object has invalid data types:", data);
+        return null;
     }
 
     // Attempt to create a Date object from other types (like ISO strings)
     const date = new Date(data);
     if (isNaN(date.getTime())) {
-         console.warn("Failed to create Date from value using new Date():", data);
-         return null;
+        console.warn("Failed to create Date from value using new Date():", data);
+        return null;
     }
     return date;
 };
@@ -52,8 +54,13 @@ function getCloudinaryPublicId(url: string): string | null {
         return null;
     }
 }
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+    (req, res, next) => {
+        Promise.resolve(fn(req, res, next)).catch(next);
+    };
 
 export default {
     safeToDate,
-    getCloudinaryPublicId
+    getCloudinaryPublicId,
+    asyncHandler
 };
