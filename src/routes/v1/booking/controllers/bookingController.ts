@@ -8,10 +8,10 @@ const handleBooking = async (req: any, res: any) => {
     const transaction = db.runTransaction(async t => {
         try {
             const email = req.email;
-            const { roomIds, startDate, endDate, children, adult, elder } = req.body;
+            const { roomIds, startDate, endDate, children, adult, elder, totalAmount } = req.body;
 
             // Validate required fields
-            if (!roomIds || !Array.isArray(roomIds) || roomIds.length === 0 || !startDate || !endDate) {
+            if (!roomIds || !Array.isArray(roomIds) || roomIds.length === 0 || !startDate || !endDate || !totalAmount) {
                 throw { status: 400, message: "Missing required fields." };
             }
 
@@ -57,6 +57,7 @@ const handleBooking = async (req: any, res: any) => {
                 children: children || 0,
                 adult: adult || 0,
                 elder: elder || 0,
+                totalAmount,
                 createdAt: new Date().getTime(),
                 status: "confirmed"
             };
@@ -217,52 +218,6 @@ const getBooking = async (req: any, res: any) => {
 }
 
 /**
- * Deletes a booking.
- */
-const deleteBooking = async (req: any, res: any) => {
-    const transaction = db.runTransaction(async t => {
-        try {
-            const { bookingId } = req.params;
-            if (!bookingId) {
-                throw { status: 400, message: "Booking ID is required." };
-            }
-
-            const bookingRef = db.collection("bookings").doc(bookingId);
-            const bookingSnapshot = await t.get(bookingRef);
-
-            if (!bookingSnapshot.exists) {
-                throw { status: 404, message: "Booking not found." };
-            }
-
-            const bookingData = bookingSnapshot.data();
-            const roomIdsToFree: string[] = Array.isArray(bookingData?.roomIds)
-                ? bookingData?.roomIds
-                : (bookingData?.roomIds ? [bookingData.roomIds] : []);
-
-            t.delete(bookingRef);
-
-            for (const id of roomIdsToFree) {
-                t.update(db.collection("rooms").doc(id), { isBooked: false });
-            }
-
-            return { status: 200, message: "Booking deleted successfully." };
-
-        } catch (error: any) {
-            throw error;
-        }
-    });
-
-    try {
-        const result = await transaction;
-        res.status(result.status).json({ message: result.message });
-    }
-    catch (error: any) {
-        console.error("Delete booking transaction error:", error);
-        res.status(error.status || 500).json({ message: error.message || "Internal server error during booking deletion." });
-    }
-}
-
-/**
  * Fetches all bookings.
  */
 const getAllBookings = async (req: any, res: any) => {
@@ -293,63 +248,10 @@ const getAllBookings = async (req: any, res: any) => {
     }
 };
 
-/**
- * Handles booking cancellation.
- */
-const handleBookingCancelation = async (req: any, res: any) => {
-    const transaction = db.runTransaction(async t => {
-        try {
-            const { bookingId } = req.params;
-            if (!bookingId) {
-                throw { status: 400, message: "Booking ID is required." };
-            }
-
-            const bookingRef = db.collection("bookings").doc(bookingId);
-            const bookingSnapshot = await t.get(bookingRef);
-
-            if (!bookingSnapshot.exists) {
-                throw { status: 404, message: "Booking not found." };
-            }
-
-            const bookingData = bookingSnapshot.data();
-            const roomIdsToFree: string[] = Array.isArray(bookingData?.roomIds)
-                ? bookingData?.roomIds
-                : (bookingData?.roomIds ? [bookingData.roomIds] : []);
-
-            const bookingStartDateTime = helperFunction.safeToDate(bookingData?.startDate);
-            const now = new Date();
-
-            if (bookingStartDateTime && bookingStartDateTime < now) {
-                throw { status: 400, message: "Cannot cancel a started booking." };
-            }
-
-            t.update(bookingRef, { status: "canceled", canceledAt: new Date().getTime() });
-
-            for (const id of roomIdsToFree) {
-                t.update(db.collection("rooms").doc(id), { isBooked: false });
-            }
-
-            return { status: 200, message: "Booking canceled successfully." };
-
-        } catch (error: any) {
-            throw error;
-        }
-    });
-
-    try {
-        const result = await transaction;
-        res.status(result.status).json({ message: result.message });
-    } catch (error: any) {
-        console.error("Booking cancellation transaction error:", error);
-        res.status(error.status || 500).json({ message: error.message || "Internal server error during cancellation." });
-    }
-}
 
 export default {
     handleBooking,
     updateBooking,
     getBooking,
-    deleteBooking,
     getAllBookings,
-    handleBookingCancelation,
 }
