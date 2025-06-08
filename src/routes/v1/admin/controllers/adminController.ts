@@ -97,7 +97,7 @@ const handleUpdateRoom = async (req: any, res: any) => {
   try {
       // req.body contains text/number fields and JSON strings from FormData
       // Ensure your Multer middleware parses these into req.body
-      const { roomId, roomName, roomType, beds, price, highlights } = req.body;
+      const { roomId, roomName, roomType, beds, price, amenities, additionalBedCost, roomSize } = req.body;
 
       // req.files contains the array of newly uploaded files (from input[type="file" multiple] named 'files')
       // This is populated by the Multer middleware (e.g., upload.array('files', ...))
@@ -152,11 +152,14 @@ const handleUpdateRoom = async (req: any, res: any) => {
       if (roomType !== undefined) updatedRoomData.roomType = roomType;
       if (beds !== undefined) updatedRoomData.beds = Number(beds); // Convert to number
       if (price !== undefined) updatedRoomData.price = Number(price); // Convert to number
+      if (additionalBedCost !== undefined) updatedRoomData.additionalBedCost = Number(additionalBedCost); // Convert to number
+      if (roomSize !== undefined) updatedRoomData.roomSize = roomSize; // Assuming roomSize is a string, no conversion needed
+      
 
       // --- 3. Process Highlights (sent as JSON string) ---
-       if (highlights !== undefined) {
+       if (amenities !== undefined) {
            try {
-              const parsedHighlights = JSON.parse(highlights);
+              const parsedHighlights = JSON.parse(amenities);
               if (!Array.isArray(parsedHighlights)) {
                   return res.status(400).json({ message: "Invalid highlights format: Must be an array." });
               }

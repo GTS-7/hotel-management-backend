@@ -1,6 +1,7 @@
 import express from "express";
 import verifyUser from "../middlewares/verifyUser.js";
 import bookingController from "./controllers/bookingController.js";
+import helperFunctions from "../../../config/helperFunctions.js";
 const router = express.Router();
 
 // Importing the booking controller
@@ -8,12 +9,11 @@ const router = express.Router();
 
 
 // Routes for booking for users
-router.use(verifyUser);
+router.use(helperFunctions.asyncHandler(verifyUser));
 
 router
     .post("/", bookingController.handleBooking)
     // .get("/availability", bookingController.checkAvailability)
     .put("/:bookingId", bookingController.updateBooking)
-    .delete("/:bookingId", bookingController.deleteBooking);
 
 export default router;
