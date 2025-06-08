@@ -26,8 +26,8 @@ router.get("/me", helperFunctions.asyncHandler(userAuthController.handleVerify))
 router.post("/logout", helperFunctions.asyncHandler(userAuthController.handleLogout));
 
 // Other routes that require authentication
-router.get("/user", helperFunctions.asyncHandler(userController.getUserDetails));
-router.put("/user", helperFunctions.asyncHandler(userController.updateUserDetails));
+router.get("/", helperFunctions.asyncHandler(userController.getUserDetails));
+router.put("/", helperFunctions.asyncHandler(userController.updateUserDetails));
 
 
 
