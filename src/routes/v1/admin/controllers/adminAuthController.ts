@@ -2,6 +2,7 @@ import db from "../../../../config/db.js";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { get } from "http";
 
 // Token secret
 const tokenSecret = process.env.TOKEN_SECRET || "default-secret";
@@ -96,7 +97,57 @@ const handleLogin = async (req: any, res: any) => {
   }
 };
 
+const getAdminDetails = async (req: any, res: any) => {
+  try {
+    const { email } = req.body;
+    
+    const adminRef = db.collection("admin").doc(email);
+    
+    const adminSnapShot = await adminRef.get();
+    // Check if the admin exists
+    if (!adminSnapShot.exists) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // Get the admin data
+    const adminData = adminSnapShot.data();
+
+    if (!adminData) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+    const { hashedPassword, ...adminDetails } = adminData; // Exclude hashed password from response
+    res.status(200).json({ admin: adminDetails });
+  } catch (error) {
+    console.log("Error while getting admin details: ", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+const getUserDetails = async (req: any, res: any) => {
+  try {
+    const userRef = db.collection("users");
+    const userSnapShot = await userRef.get();
+
+    if (userSnapShot.empty) {
+      return res.status(404).json({ message: "No users found" });
+    }
+
+    const users = userSnapShot.docs.map(doc => {
+      const userData = doc.data();
+      const { hashedPassword, ...userDetails } = userData; // Exclude hashed password from response
+      return { id: doc.id, ...userDetails };
+    });
+
+    res.status(200).json({ users });
+  } catch (error) {
+    console.log("Error while getting user details: ", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 export default {
   handleRegistration,
   handleLogin,
+  getAdminDetails,
+  getUserDetails
 };

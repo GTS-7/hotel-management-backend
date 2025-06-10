@@ -18,6 +18,12 @@ router.use(verifyAdmin);
 
 // Other routes that require authentication
 
+// Admin routes
+router
+  .get("/admin", adminAuthController.getAdminDetails)
+  .get("/users", adminAuthController.getUserDetails);
+  
+
 // Room management routes
 router
   .post("/room", upload.array("photos", 10) , adminController.handleCreateRoom)
