@@ -33,10 +33,10 @@ const saltRounds = 10;
 // Added NextFunction to the function signature type
 const handleRegistration = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { fullName, email, password } = req.body;
+    const { fullName, email, password, phone } = req.body;
     console.log("Registration request received:", { fullName, email }); // Don't log password
-    if (!fullName || !email || !password)
-      return res.status(400).json({ message: "Please send the required details (Full Name, Email, Password)." });
+    if (!fullName || !email || !password || !phone)
+      return res.status(400).json({ message: "Please send the required details (Full Name, Email, Password, Phone)." });
 
     // Check if email already exists
     const userSnapShot = await db.collection("users").where("email", "==", email).get();
@@ -53,6 +53,7 @@ const handleRegistration = async (req: Request, res: Response, next: NextFunctio
       fullName,
       email,
       password: hashedPassword, // Store the hashed password
+      phone, 
       createdAt: new Date().toISOString(),
       // Add googleId: null or undefined here if you want to explicitly track auth method
     });
