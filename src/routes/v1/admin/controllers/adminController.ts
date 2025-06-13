@@ -6,12 +6,12 @@ import helperFunctions from "../../../../config/helperFunctions.js";
 // Controllers for handling room management
 const handleCreateRoom = async (req: any, res: any) => {
   try {
-    let { roomName, roomType, beds, price, additionalBedCost, amenities, roomSize } = req.body;
+    let { roomName, roomType, beds, price, additionalBedCost, amenities, roomSize, specialServices } = req.body;
     const files = req.files as Express.Multer.File[];
 
     // const parsedExtraFacilities = JSON.parse(extraFacilities);
 
-    if (!roomName || !roomType || !beds || !price || !files?.length || !additionalBedCost || !amenities || !roomSize) {
+    if (!roomName || !roomType || !beds || !price || !files?.length || !additionalBedCost || !amenities || !roomSize || !specialServices) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -57,6 +57,7 @@ const handleCreateRoom = async (req: any, res: any) => {
       price,
       photos: photoUrls,
       amenities,
+      specialServices: specialServices ? JSON.parse(specialServices) : [], // Parse if provided
       additionalBedCost,
       roomSize,
       // extraFacilities: extraFacilities,
@@ -97,7 +98,7 @@ const handleUpdateRoom = async (req: any, res: any) => {
   try {
       // req.body contains text/number fields and JSON strings from FormData
       // Ensure your Multer middleware parses these into req.body
-      const { roomId, roomName, roomType, beds, price, amenities, additionalBedCost, roomSize } = req.body;
+      const { roomId, roomName, roomType, beds, price, amenities, additionalBedCost, roomSize, specialServices } = req.body;
 
       // req.files contains the array of newly uploaded files (from input[type="file" multiple] named 'files')
       // This is populated by the Multer middleware (e.g., upload.array('files', ...))
@@ -164,12 +165,27 @@ const handleUpdateRoom = async (req: any, res: any) => {
                   return res.status(400).json({ message: "Invalid highlights format: Must be an array." });
               }
                // Filter out non-string highlights if necessary
-               updatedRoomData.highlights = parsedHighlights.filter(item => typeof item === 'string');
+               updatedRoomData.amenities = parsedHighlights.filter(item => typeof item === 'string');
            } catch (e) {
                console.error("Failed to parse highlights JSON:", e);
                return res.status(400).json({ message: "Invalid highlights JSON format." });
            }
        }
+
+      // Process specialServices if provided
+      if (specialServices !== undefined) {
+          try {
+              const parsedSpecialServices = JSON.parse(specialServices);
+              if (!Array.isArray(parsedSpecialServices)) {
+                  return res.status(400).json({ message: "Invalid specialServices format: Must be an array." });
+              }
+              // Filter out non-string services if necessary
+              updatedRoomData.specialServices = parsedSpecialServices.filter(item => typeof item === 'string');
+          } catch (e) {
+              console.error("Failed to parse specialServices JSON:", e);
+              return res.status(400).json({ message: "Invalid specialServices JSON format." });
+          }
+      }
 
 
       // --- 4. Manage Photos (Deletion and Upload) ---
