@@ -21,7 +21,9 @@ router.use(verifyAdmin);
 // Admin routes
 router
   .get("/admin", adminAuthController.getAdminDetails)
-  .get("/users", adminAuthController.getUserDetails);
+  .get("/users", adminAuthController.getUserDetails)
+  .delete("/user/:userId", adminController.handleDeleteUser)
+  .put("/user/:userId", adminController.handleUpdateUser);
   
 
 // Room management routes
