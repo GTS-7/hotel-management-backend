@@ -20,6 +20,7 @@ router.use(verifyAdmin);
 
 // Admin routes
 router
+  .get("/logout", adminAuthController.handleLogout)
   .get("/admin", adminAuthController.getAdminDetails)
   .get("/users", adminAuthController.getUserDetails)
   .delete("/user/:userId", adminController.handleDeleteUser)

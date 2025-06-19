@@ -145,9 +145,33 @@ const getUserDetails = async (req: any, res: any) => {
   }
 }
 
+const handleLogout = async (req: any, res: any) => {
+  try {
+    const email = req.email;
+
+    const foundAdmin = await db.collection("admin").doc(email).get();
+    if (!foundAdmin.exists) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // Clear the session
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    });
+
+    return res.status(200).json({ message: "Admin logged out successfully" });
+  } catch (error) {
+    console.log("Error while logging out: ", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 export default {
   handleRegistration,
   handleLogin,
   getAdminDetails,
-  getUserDetails
+  getUserDetails,
+  handleLogout
 };

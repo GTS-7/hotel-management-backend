@@ -4,7 +4,8 @@ import db from "../../../config/db.js";
 const verifyAdmin = (req: any, res: any, next: any) => {
   try {
     // Check if the request has an authorization header
-    const token = req.headers["authorization"]?.split(" ")[1];
+    const token = req.cookies?.authToken;
+    console.log("Token: ", token);
     if (!token) return res.status(401).json({ message: "Unauthorized" });
 
     const secretKey = process.env.TOKEN_SECRET || "default";
