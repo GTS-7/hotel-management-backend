@@ -21,7 +21,7 @@ router.use(verifyAdmin);
 // Admin routes
 router
   .get("/logout", adminAuthController.handleLogout)
-  .get("/admin", adminAuthController.getAdminDetails)
+  .get("/", adminAuthController.getAdminDetails)
   .get("/users", adminAuthController.getUserDetails)
   .delete("/user/:userId", adminController.handleDeleteUser)
   .put("/user/:userId", adminController.handleUpdateUser);
@@ -31,6 +31,7 @@ router
 router
   .post("/room", upload.array("photos", 10) , adminController.handleCreateRoom)
   .get("/room", adminController.getRooms)
+  .get("/totalRoom", adminController.getTotalRooms)
   .put("/room", upload.array("photos", 10), adminController.handleUpdateRoom)
   .delete("/room/:roomId", adminController.handleDeleteRoom);
 

@@ -9,7 +9,7 @@ const tokenSecret = process.env.TOKEN_SECRET || "default-secret";
 
 const handleRegistration = async (req: any, res: any) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
     if (!email || !password)
       return res.status(400).json({ message: "Please send the required details..." });
 
@@ -25,6 +25,7 @@ const handleRegistration = async (req: any, res: any) => {
     await newAdminRef.set({
       email,
       hashedPassword,
+      name,
       createdAt: new Date().toISOString(),
     });
 
@@ -99,7 +100,7 @@ const handleLogin = async (req: any, res: any) => {
 
 const getAdminDetails = async (req: any, res: any) => {
   try {
-    const { email } = req.body;
+    const email = req.email;
     
     const adminRef = db.collection("admin").doc(email);
     

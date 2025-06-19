@@ -408,6 +408,20 @@ const handleUpdateUser = async (req: any, res: any) => {
   }
 }
 
+const getTotalRooms = async (req: any, res: any) => {
+  try {
+    // Fetch all rooms from the "rooms" collection
+    const roomsSnapshot = await db.collection("rooms").get();
+    const totalRooms = roomsSnapshot.size; // Get the number of documents in the collection
+
+    res.status(200).json({ totalRooms });
+
+  } catch (error) {
+    console.error("Error fetching total rooms:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 export default {
   handleCreateRoom,
   getRooms,
@@ -415,4 +429,5 @@ export default {
   handleDeleteRoom,
   handleDeleteUser,
   handleUpdateUser,
+  getTotalRooms
 };
