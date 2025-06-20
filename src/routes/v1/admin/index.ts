@@ -23,6 +23,7 @@ router
   .get("/logout", adminAuthController.handleLogout)
   .get("/", adminAuthController.getAdminDetails)
   .get("/users", adminAuthController.getUserDetails)
+  .get("/totalUsers", adminController.getTotalUsers)
   .delete("/user/:userId", adminController.handleDeleteUser)
   .put("/user/:userId", adminController.handleUpdateUser);
   
@@ -38,6 +39,7 @@ router
 // Booking management routes
 router
   .get("/booking", bookingController.getAllBookings)
+  .get("/totalBooking", adminController.getTotalBookings)
   // .delete("/booking/:bookingId", bookingController.deleteBooking)
   .put("/booking", bookingController.updateBooking);
 

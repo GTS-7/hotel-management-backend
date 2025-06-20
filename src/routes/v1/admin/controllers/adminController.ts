@@ -422,6 +422,28 @@ const getTotalRooms = async (req: any, res: any) => {
   }
 }
 
+const getTotalUsers = async (req: any, res: any) => {
+  try {
+    const usersSnapshot = await db.collection("users").get();
+    const totalUsers = usersSnapshot.size; // Get the number of documents in the collection
+    res.status(200).json({ totalUsers });
+  } catch (error) {
+    console.error("Error fetching total users:", error);
+    res.status(500).json({ message: "Internal server error" });    
+  }
+}
+
+const getTotalBookings = async (req: any, res: any) => {
+  try {
+    const bookingsSnapshot = await db.collection("bookings").get();
+    const totalBookings = bookingsSnapshot.size; // Get the number of documents in the collection
+    res.status(200).json({ totalBookings });
+  } catch (error) {
+    console.error("Error fetching total bookings:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 export default {
   handleCreateRoom,
   getRooms,
@@ -429,5 +451,7 @@ export default {
   handleDeleteRoom,
   handleDeleteUser,
   handleUpdateUser,
-  getTotalRooms
+  getTotalRooms,
+  getTotalUsers,
+  getTotalBookings
 };
