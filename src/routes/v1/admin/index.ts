@@ -26,11 +26,10 @@ router
   .get("/totalUsers", adminController.getTotalUsers)
   .delete("/user/:userId", adminController.handleDeleteUser)
   .put("/user/:userId", adminController.handleUpdateUser);
-  
 
 // Room management routes
 router
-  .post("/room", upload.array("photos", 10) , adminController.handleCreateRoom)
+  .post("/room", upload.array("photos", 10), adminController.handleCreateRoom)
   .get("/room", adminController.getRooms)
   .get("/totalRoom", adminController.getTotalRooms)
   .put("/room", upload.array("photos", 10), adminController.handleUpdateRoom)

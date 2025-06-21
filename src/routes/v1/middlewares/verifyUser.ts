@@ -3,7 +3,6 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import db from "../../../config/db.js";
 
-
 interface UserPayload {
   id: string;
   email: string;
@@ -60,30 +59,35 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
     // We assert its type using `as UserPayload`.
     let decoded: UserPayload;
     try {
-        decoded = jwt.verify(token, tokenSecret) as UserPayload;
-        // Basic check to ensure expected fields are present after decoding
-        if (!decoded.email || !decoded.clientDeviceId) {
-             console.warn("Token decoded successfully but missing required fields (email or clientDeviceId).");
-             console.warn("Token decoded successfully but missing required fields (email or clientDeviceId).");
-             res.clearCookie("authToken");
-             return res.status(401).json({
-                success: false,
-                message: "Invalid token structure. Please log in again.",
-             });
-        }
-    } catch (jwtError: any) {
-        console.error("JWT verification failed:", jwtError.message);
-        res.clearCookie("authToken"); // Clear cookie on invalid token
+      decoded = jwt.verify(token, tokenSecret) as UserPayload;
+      // Basic check to ensure expected fields are present after decoding
+      if (!decoded.email || !decoded.clientDeviceId) {
+        console.warn(
+          "Token decoded successfully but missing required fields (email or clientDeviceId).",
+        );
+        console.warn(
+          "Token decoded successfully but missing required fields (email or clientDeviceId).",
+        );
+        res.clearCookie("authToken");
         return res.status(401).json({
-            success: false,
-            message: "Token is invalid or expired. Please log in again.",
+          success: false,
+          message: "Invalid token structure. Please log in again.",
         });
+      }
+    } catch (jwtError: any) {
+      console.error("JWT verification failed:", jwtError.message);
+      res.clearCookie("authToken"); // Clear cookie on invalid token
+      return res.status(401).json({
+        success: false,
+        message: "Token is invalid or expired. Please log in again.",
+      });
     }
-
 
     // 4. Session Validation (Database Check)
     // Check if a session with the matching user ID (email) AND clientDeviceId exists.
-    console.log(`Attempting to validate session for user ${decoded.email}, device ${decoded.clientDeviceId}`);
+    console.log(
+      `Attempting to validate session for user ${decoded.email}, device ${decoded.clientDeviceId}`,
+    );
     const sessionSnapshot = await db
       .collection("sessions")
       .where("userId", "==", decoded.email) // Assuming userId in sessions is the email
@@ -93,7 +97,7 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
     if (sessionSnapshot.empty) {
       // Session not found or has been deleted (e.g., via logout from another device)
       console.warn(
-        `Session validation failed for user ${decoded.email}, device ${decoded.clientDeviceId}. Session not found in DB.`
+        `Session validation failed for user ${decoded.email}, device ${decoded.clientDeviceId}. Session not found in DB.`,
       );
       res.clearCookie("authToken"); // Clear the invalid session cookie
       return res.status(401).json({
@@ -109,7 +113,6 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
 
     // 6. Move to next middleware or route handler
     next();
-
   } catch (error: any) {
     // Catch any unexpected errors during the process (e.g., database issues)
     console.error("Error in verifyUser middleware:", error);

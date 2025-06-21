@@ -3,7 +3,7 @@ import helperFunctions from "../../../config/helperFunctions.js";
 const router = express.Router();
 
 // custom controllers
-import userAuthController from "./controller/userAuthController.js"
+import userAuthController from "./controller/userAuthController.js";
 import verifyUser from "../middlewares/verifyUser.js";
 import userController from "./controller/userController.js";
 
@@ -28,8 +28,6 @@ router.post("/logout", helperFunctions.asyncHandler(userAuthController.handleLog
 // Other routes that require authentication
 router.get("/", helperFunctions.asyncHandler(userController.getUserDetails));
 router.put("/", helperFunctions.asyncHandler(userController.updateUserDetails));
-
-
 
 // Commented out cart routes
 // router.post("/cart", asyncHandler(userController.handleCart));

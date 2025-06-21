@@ -1,17 +1,16 @@
-import express from 'express';
-import roomController from './controllers/roomController.js';
-import verifyUser from '../middlewares/verifyUser.js';
-import reviewController from './controllers/reviewController.js';
-import helperFunctions from '../../../config/helperFunctions.js';
+import express from "express";
+import roomController from "./controllers/roomController.js";
+import verifyUser from "../middlewares/verifyUser.js";
+import reviewController from "./controllers/reviewController.js";
+import helperFunctions from "../../../config/helperFunctions.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/', roomController.getRooms);
+router.get("/", roomController.getRooms);
 
 // Routes that require authentication
-router.post('/review', reviewController.handleRoomReviews);
+router.post("/review", reviewController.handleRoomReviews);
 
 router.use(helperFunctions.asyncHandler(verifyUser));
-router
-    .get('/room/:id', roomController.getRoomById)
+router.get("/room/:id", roomController.getRoomById);
 export default router;

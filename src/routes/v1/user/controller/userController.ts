@@ -18,7 +18,9 @@ const getUserDetails = async (req: any, res: any) => {
       createdAt: userData.createdAt,
     };
 
-    res.status(200).json({ message: "User details fetched successfully", userData: userWithoutPassword });
+    res
+      .status(200)
+      .json({ message: "User details fetched successfully", userData: userWithoutPassword });
   } catch (error) {
     console.error("Error fetching user details: ", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -127,20 +129,20 @@ const updateUserDetails = async (req: any, res: any) => {
 
 const deleteUser = async (req: any, res: any) => {
   try {
-      const email = req.email;
-      if (!email) return res.status(400).json({ message: "Email is required" });
+    const email = req.email;
+    if (!email) return res.status(400).json({ message: "Email is required" });
 
-      const userRef = db.collection("users").doc(email);
-      const user = await userRef.get();
-      if (!user.exists) return res.status(404).json({ message: "User not found" });
+    const userRef = db.collection("users").doc(email);
+    const user = await userRef.get();
+    if (!user.exists) return res.status(404).json({ message: "User not found" });
 
-      await userRef.delete();
-      return res.status(200).json({ message: "User deleted successfully" });
+    await userRef.delete();
+    return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     console.error("Error deleting user: ", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 export default {
   getUserDetails,

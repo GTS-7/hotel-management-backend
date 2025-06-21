@@ -6,14 +6,12 @@ const router = express.Router();
 
 // Importing the booking controller
 
-
-
 // Routes for booking for users
 router.use(helperFunctions.asyncHandler(verifyUser));
 
 router
-    .post("/", bookingController.handleBooking)
-    // .get("/availability", bookingController.checkAvailability)
-    .put("/:bookingId", bookingController.updateBooking)
+  .post("/", bookingController.handleBooking)
+  // .get("/availability", bookingController.checkAvailability)
+  .put("/:bookingId", bookingController.updateBooking);
 
 export default router;
